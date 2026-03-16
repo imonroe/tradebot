@@ -1,0 +1,6 @@
+[broker]
+name = "tradier"
+base_url = "https://sandbox.tradier.com"
+
+[broker.credentials]
+env_file = ".env.paper"

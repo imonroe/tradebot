@@ -1,0 +1,12 @@
+[general]
+mode = "paper"  # "paper" or "live"
+log_level = "INFO"
+
+[database]
+url = "sqlite:///tradebot.db"
+
+[trading]
+starting_capital = 2500.00
+max_daily_loss_pct = 3.0
+max_drawdown_pct = 10.0
+pdt_limit = 3

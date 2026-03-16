@@ -1,0 +1,15 @@
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+.eggs/
+*.db
+.env
+.env.paper
+.env.live
+.venv/
+.pytest_cache/
+.ruff_cache/
+node_modules/
+frontend/dist/
