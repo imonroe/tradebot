@@ -13,7 +13,7 @@ options (XSP/SPX). The bot uses an event-driven architecture with swappable
 strategy configurations, PDT-aware risk management, and a React web dashboard.
 
 **Starting conditions:**
-- Paper trading only (Tradier sandbox + Alpaca paper)
+- Paper trading only (Tradier sandbox)
 - $2,500 simulated starting capital
 - 0DTE strategies: iron condors, credit spreads, debit spreads on XSP
 - Sub-$25K account → PDT rules apply
@@ -95,6 +95,10 @@ Multi-leg order submission is first-class because iron condors require atomic
 4-leg submission. Tradier supports this natively via their `multileg` order
 type.
 
+**Financial precision:** All monetary values use `Decimal` throughout the
+system to avoid floating-point rounding errors. This applies to prices,
+P&L calculations, position sizing, and risk checks.
+
 ### 2.5 Event Bus Topology
 
 A single `asyncio.Queue` with type-based dispatch. The event loop pulls events
@@ -116,10 +120,33 @@ while running:
         await queue.put(e)
 ```
 
-The dashboard and logger subscribe as passive observers — they receive copies
-of all events but do not produce events that feed back into the pipeline.
+The dashboard and logger subscribe as passive observers via a separate observer
+list. Every event is passed to all observers *before* dispatch to the primary
+handler. Observers receive all event types (including `RiskEvent`) but do not
+produce events that feed back into the pipeline.
 
-### 2.6 Options-Specific Considerations
+```python
+for observer in observers:     # logger, dashboard, etc.
+    await observer.on_event(event)
+handler = handlers.get(type(event))
+if handler:
+    new_events = await handler(event)
+```
+
+### 2.6 Backtesting Architecture
+
+Backtesting uses the same event pipeline as live trading, with two swaps:
+
+1. **`HistoricalDataFeed`** replaces the live `MarketDataHandler` — replays
+   saved market data as `MarketEvent`s at configurable speed
+2. **`SimulatedBroker`** replaces `TradierBroker` — simulates order fills
+   locally using historical data (no API calls)
+
+This gives backtest/live parity: the strategy, risk manager, and portfolio
+tracker run identical code in both modes. Historical options chain data is
+the main constraint — see Section 10 for sourcing considerations.
+
+### 2.7 Options-Specific Considerations
 
 - Multi-leg order support from day one (iron condors = 4 legs)
 - Options chain fetching and strike selection logic (by delta or fixed offset)
@@ -203,7 +230,7 @@ entry:
     short_put_delta: -0.15
     wing_width: 5
   iv_filter:
-    min_iv_rank: 25       # requires historical IV data — see Section 8
+    min_iv_rank: 25       # requires historical IV data — see Section 10
   min_credit: 0.30
 
 exit:
