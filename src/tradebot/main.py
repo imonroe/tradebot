@@ -89,11 +89,26 @@ async def run_bot(settings: Settings) -> None:
         logger.critical("Live mode requires --confirm-live flag. Exiting.")
         return
 
-    # Initialize broker
-    broker = TradierBroker(
-        base_url=settings.broker_base_url,
-        api_token=settings.tradier_api_token,
-    )
+    # Initialize broker and data source
+    if settings.broker_name == "paper":
+        from tradebot.execution.brokers.paper import PaperBroker
+        from tradebot.data.sources.paper import PaperDataSource
+
+        broker = PaperBroker(starting_balance=settings.starting_capital)
+        data_source = PaperDataSource(base_price=settings.paper_base_price)
+        logger.info("using_paper_broker", base_price=str(settings.paper_base_price))
+    else:
+        broker = TradierBroker(
+            base_url=settings.broker_base_url,
+            api_token=settings.tradier_api_token,
+        )
+        data_source = TradierDataSource(broker)
+
+    # Optionally wrap data source with recorder
+    if settings.record_market_data:
+        from tradebot.data.sources.recorder import DataRecorder
+        data_source = DataRecorder(data_source)
+        logger.info("data_recording_enabled")
 
     # Initialize database
     engine = create_db_engine(settings.database_url)
@@ -102,7 +117,6 @@ async def run_bot(settings: Settings) -> None:
     repo = Repository(session)
 
     # Initialize components
-    data_source = TradierDataSource(broker)
     market_data = MarketDataHandler(data_source)
     order_manager = OrderManager(broker)
     portfolio = PortfolioTracker(starting_capital=settings.starting_capital)
