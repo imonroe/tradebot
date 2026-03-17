@@ -1,3 +1,143 @@
+import { useWebSocket } from "../hooks/useWebSocket";
+import { useApi } from "../hooks/useApi";
+
+interface Position {
+  broker_order_id: string;
+  strategy: string;
+  symbol: string;
+  spread_type: string;
+  fill_price: string;
+  timestamp: string;
+}
+
+interface PortfolioData {
+  nav: string;
+  daily_pnl: string;
+  drawdown_pct: string;
+  open_positions: Position[];
+  pdt_day_trades_used: number;
+  mode: string;
+}
+
+function StatCard({
+  label,
+  value,
+  color = "text-white",
+}: {
+  label: string;
+  value: string;
+  color?: string;
+}) {
+  return (
+    <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
+      <div className="text-sm text-gray-400">{label}</div>
+      <div className={`text-2xl font-bold mt-1 ${color}`}>{value}</div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
-  return <div>Dashboard loading...</div>;
+  const { data: wsData, connected } = useWebSocket();
+  const { data: portfolio, loading } = useApi<PortfolioData>(
+    "/api/portfolio",
+    10000
+  );
+
+  // Use WebSocket data if available, fall back to REST
+  const nav = wsData?.nav ?? portfolio?.nav ?? "—";
+  const dailyPnl = wsData?.daily_pnl ?? portfolio?.daily_pnl ?? "0";
+  const drawdown = wsData?.drawdown_pct ?? portfolio?.drawdown_pct ?? "0";
+  const pdtUsed =
+    wsData?.pdt_day_trades_used ?? portfolio?.pdt_day_trades_used ?? 0;
+  const mode = wsData?.mode ?? portfolio?.mode ?? "—";
+  const positions = portfolio?.open_positions ?? [];
+
+  const pnlNum = parseFloat(dailyPnl);
+  const pnlColor =
+    pnlNum > 0 ? "text-green-400" : pnlNum < 0 ? "text-red-400" : "text-white";
+  const pnlDisplay = pnlNum >= 0 ? `+$${dailyPnl}` : `-$${Math.abs(pnlNum)}`;
+
+  if (loading && !wsData) {
+    return <div className="text-gray-400">Loading dashboard...</div>;
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Status bar */}
+      <div className="flex items-center gap-4">
+        <span
+          className={`px-2 py-1 rounded text-xs font-bold ${
+            mode === "paper"
+              ? "bg-yellow-900 text-yellow-300"
+              : "bg-red-900 text-red-300"
+          }`}
+        >
+          {mode?.toUpperCase()} MODE
+        </span>
+        <span
+          className={`flex items-center gap-1 text-xs ${
+            connected ? "text-green-400" : "text-red-400"
+          }`}
+        >
+          <span
+            className={`w-2 h-2 rounded-full ${
+              connected ? "bg-green-400" : "bg-red-400"
+            }`}
+          />
+          {connected ? "Live" : "Disconnected"}
+        </span>
+      </div>
+
+      {/* Stats grid */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard label="NAV" value={`$${nav}`} />
+        <StatCard label="Daily P&L" value={pnlDisplay} color={pnlColor} />
+        <StatCard
+          label="Drawdown"
+          value={`${parseFloat(drawdown).toFixed(2)}%`}
+          color={parseFloat(drawdown) > 5 ? "text-red-400" : "text-white"}
+        />
+        <StatCard label="PDT Used" value={`${pdtUsed}/3`} />
+      </div>
+
+      {/* Open Positions */}
+      <div>
+        <h2 className="text-lg font-semibold mb-3">Open Positions</h2>
+        {positions.length === 0 ? (
+          <div className="text-gray-500 bg-gray-900 border border-gray-800 rounded-lg p-8 text-center">
+            No open positions
+          </div>
+        ) : (
+          <div className="bg-gray-900 border border-gray-800 rounded-lg overflow-hidden">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-800">
+                <tr>
+                  <th className="px-4 py-2 text-left text-gray-400">Symbol</th>
+                  <th className="px-4 py-2 text-left text-gray-400">Strategy</th>
+                  <th className="px-4 py-2 text-left text-gray-400">Type</th>
+                  <th className="px-4 py-2 text-right text-gray-400">
+                    Fill Price
+                  </th>
+                  <th className="px-4 py-2 text-right text-gray-400">Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                {positions.map((p) => (
+                  <tr key={p.broker_order_id} className="border-t border-gray-800">
+                    <td className="px-4 py-2 font-mono">{p.symbol}</td>
+                    <td className="px-4 py-2">{p.strategy}</td>
+                    <td className="px-4 py-2">{p.spread_type}</td>
+                    <td className="px-4 py-2 text-right">${p.fill_price}</td>
+                    <td className="px-4 py-2 text-right text-gray-400">
+                      {new Date(p.timestamp).toLocaleTimeString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
