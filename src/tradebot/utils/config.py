@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     broker_name: str = "tradier"
     broker_base_url: str = "https://sandbox.tradier.com"
     tradier_api_token: str = ""
+    paper_base_price: Decimal = Decimal("570.00")
+    record_market_data: bool = False
     model_config = {"env_prefix": "TRADEBOT_"}
 
     @field_validator("mode")
