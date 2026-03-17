@@ -4,7 +4,7 @@ from datetime import date
 import structlog
 
 from tradebot.core.events import MarketEvent
-from tradebot.data.sources.tradier import TradierDataSource
+from tradebot.data.sources.base import DataSource
 
 logger = structlog.get_logger()
 
@@ -12,7 +12,7 @@ logger = structlog.get_logger()
 class MarketDataHandler:
     """Fetches market data and produces MarketEvents."""
 
-    def __init__(self, data_source: TradierDataSource) -> None:
+    def __init__(self, data_source: DataSource) -> None:
         self._data_source = data_source
 
     async def fetch_market_data(self, symbol: str, expiration: date) -> MarketEvent:
