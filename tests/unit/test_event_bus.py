@@ -1,12 +1,11 @@
 """Tests for the event system."""
-import asyncio
-from datetime import datetime, date
+from datetime import datetime
 from decimal import Decimal
 import pytest
-from tradebot.core.enums import OptionType, OrderSide, SpreadType
-from tradebot.core.events import MarketEvent, SignalEvent, OrderEvent, FillEvent, RiskEvent
+from tradebot.core.enums import OrderSide, SpreadType
+from tradebot.core.events import MarketEvent, SignalEvent, RiskEvent
 from tradebot.core.event_bus import EventBus
-from tradebot.core.models import Bar, OrderLeg, OptionsChain
+from tradebot.core.models import Bar, OrderLeg
 
 def test_market_event_creation():
     bar = Bar(symbol="XSP", timestamp=datetime(2026, 3, 16, 10, 0),

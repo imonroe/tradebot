@@ -3,8 +3,8 @@ from datetime import date
 from decimal import Decimal
 from unittest.mock import AsyncMock, patch
 import pytest
-from tradebot.core.enums import OptionType, OrderSide, OrderStatus
-from tradebot.core.models import Account, OrderLeg, OrderResult
+from tradebot.core.enums import OrderSide, OrderStatus
+from tradebot.core.models import OrderLeg
 from tradebot.execution.brokers.tradier import TradierBroker
 
 @pytest.fixture

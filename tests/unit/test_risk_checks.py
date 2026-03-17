@@ -1,9 +1,8 @@
 """Tests for risk management checks."""
-from datetime import date, time
+from datetime import time
 from decimal import Decimal
 from unittest.mock import MagicMock
 
-import pytest
 
 from tradebot.core.enums import OrderSide, SpreadType
 from tradebot.core.events import SignalEvent
@@ -13,7 +12,6 @@ from tradebot.risk.checks import (
     MaxDailyLossCheck,
     MaxDrawdownCheck,
     PositionSizeCheck,
-    SpreadWidthCheck,
     TimeWindowCheck,
     DuplicateCheck,
 )

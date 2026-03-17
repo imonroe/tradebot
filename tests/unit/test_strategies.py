@@ -1,15 +1,12 @@
 """Tests for trading strategies."""
 from datetime import date, datetime, time
 from decimal import Decimal
-from pathlib import Path
 
-import pytest
 
-from tradebot.core.enums import OptionType, OrderSide, SpreadType
-from tradebot.core.events import MarketEvent, SignalEvent
+from tradebot.core.enums import OptionType, OrderSide
+from tradebot.core.events import MarketEvent
 from tradebot.core.models import Bar, Greeks, OptionContract, OptionsChain
 from tradebot.strategy.strategies.iron_condor import IronCondorStrategy
-from tradebot.utils.config import load_strategy_config
 
 
 def _make_option(

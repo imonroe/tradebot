@@ -2,7 +2,7 @@
 from decimal import Decimal
 from pathlib import Path
 import pytest
-from tradebot.utils.config import Settings, StrategyConfig, load_strategy_config
+from tradebot.utils.config import Settings, load_strategy_config
 
 def test_default_settings():
     settings = Settings()

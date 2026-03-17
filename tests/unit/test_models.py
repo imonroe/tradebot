@@ -3,10 +3,10 @@ from decimal import Decimal
 from datetime import datetime, date
 
 from tradebot.core.enums import (
-    OptionType, OrderSide, OrderType, OrderStatus, SpreadType, TradeStatus,
+    OptionType, OrderSide, SpreadType,
 )
 from tradebot.core.models import (
-    OptionContract, OptionsChain, OrderLeg, Bar, Greeks,
+    OptionContract, OrderLeg, Bar, Greeks,
 )
 
 

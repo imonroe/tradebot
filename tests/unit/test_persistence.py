@@ -1,12 +1,10 @@
 """Tests for database models and repository."""
-import asyncio
-from datetime import date, datetime
+from datetime import date
 from decimal import Decimal
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from tradebot.persistence.database import Base
-from tradebot.persistence.models import TradeRecord, TradeLegRecord, DayTradeLogRecord, DailySnapshotRecord
 from tradebot.persistence.repository import Repository
 
 @pytest.fixture
