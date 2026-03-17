@@ -3,7 +3,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
-from tradebot.persistence.models import TradeRecord, TradeLegRecord, DayTradeLogRecord, DailySnapshotRecord
+from tradebot.persistence.models import TradeRecord, TradeLegRecord, DayTradeLogRecord
 
 class Repository:
     def __init__(self, session: Session) -> None:
@@ -48,4 +48,8 @@ class Repository:
 
     def get_open_trades(self) -> list[TradeRecord]:
         stmt = select(TradeRecord).where(TradeRecord.status == "open")
+        return list(self._session.execute(stmt).scalars().all())
+
+    def get_recent_trades(self, limit: int = 100) -> list[TradeRecord]:
+        stmt = select(TradeRecord).order_by(TradeRecord.entry_time.desc()).limit(limit)
         return list(self._session.execute(stmt).scalars().all())
