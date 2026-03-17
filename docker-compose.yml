@@ -1,0 +1,25 @@
+services:
+  backend:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - tradebot-data:/app/data
+      - ./config:/app/config:ro
+    env_file:
+      - .env.paper
+    environment:
+      - TRADEBOT_MODE=paper
+      - TRADEBOT_DATABASE_URL=sqlite:////app/data/tradebot.db
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  tradebot-data:
