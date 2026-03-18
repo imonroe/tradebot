@@ -29,6 +29,15 @@ async def get_portfolio(request: Request):
     }
 
 
+@router.get("/portfolio/nav-history")
+async def get_nav_history(request: Request, days: int = 30):
+    """Get NAV history for chart display."""
+    state = request.app.state.app_state
+    if state.repository is None:
+        return []
+    return state.repository.get_nav_history(days=days)
+
+
 @router.get("/portfolio/positions")
 async def get_positions(request: Request):
     """Get open positions."""

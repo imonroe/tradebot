@@ -123,6 +123,26 @@ def test_strategies_endpoint(client):
     assert isinstance(data, list)
 
 
+# --- NAV History ---
+
+def test_nav_history_endpoint(client_with_repo):
+    response = client_with_repo.get("/api/portfolio/nav-history")
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, list)
+
+
+def test_nav_history_with_days_param(client_with_repo):
+    response = client_with_repo.get("/api/portfolio/nav-history?days=7")
+    assert response.status_code == 200
+
+
+def test_nav_history_without_repo(client):
+    response = client.get("/api/portfolio/nav-history")
+    assert response.status_code == 200
+    assert response.json() == []
+
+
 # --- Task 4: WebSocket ---
 
 def test_websocket_connection(client):
