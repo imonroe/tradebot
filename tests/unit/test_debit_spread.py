@@ -4,7 +4,7 @@ from decimal import Decimal
 
 import pytest
 
-from tradebot.core.enums import OptionType, OrderSide, SpreadType
+from tradebot.core.enums import OptionType, SpreadType
 from tradebot.core.events import MarketEvent
 from tradebot.core.models import Bar, Greeks, OptionContract, OptionsChain
 from tradebot.strategy.strategies.debit_spread import DebitSpreadStrategy

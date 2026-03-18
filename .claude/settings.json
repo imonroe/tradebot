@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv python:*)",
+      "Bash(DATABASE_URL=sqlite:///test_alembic.db uv run alembic upgrade head)",
+      "Bash(docker compose:*)"
+    ]
+  }
+}
