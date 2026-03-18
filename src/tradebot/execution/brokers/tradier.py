@@ -15,10 +15,10 @@ SIDE_MAP = {
 }
 
 class TradierBroker:
-    def __init__(self, base_url: str, api_token: str) -> None:
+    def __init__(self, base_url: str, api_token: str, account_id: str = "") -> None:
         self._base_url = base_url.rstrip("/")
         self._headers = {"Authorization": f"Bearer {api_token}", "Accept": "application/json"}
-        self._account_id: str | None = None
+        self._account_id: str | None = account_id or None
 
     async def _request(self, method: str = "GET", path: str = "", params: dict | None = None, data: dict | None = None) -> dict:
         url = f"{self._base_url}{path}"

@@ -2,7 +2,7 @@
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from decimal import Decimal
-from tradebot.core.enums import OptionType, OrderSide, OrderStatus, SpreadType, TradeStatus
+from tradebot.core.enums import OptionType, OrderSide, OrderStatus
 
 @dataclass(frozen=True)
 class Greeks:
