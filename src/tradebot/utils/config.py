@@ -18,6 +18,8 @@ class Settings(BaseSettings):
     broker_base_url: str = "https://sandbox.tradier.com"
     tradier_api_token: str = ""
     tradier_account_num: str = ""
+    paper_base_price: Decimal = Decimal("570.00")
+    record_market_data: bool = False
     model_config = {"env_file": ".env.paper", "env_file_encoding": "utf-8", "extra": "ignore"}
 
     @field_validator("mode")
