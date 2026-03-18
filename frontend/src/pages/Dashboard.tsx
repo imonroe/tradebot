@@ -1,5 +1,6 @@
 import { useWebSocket } from "../hooks/useWebSocket";
 import { useApi } from "../hooks/useApi";
+import { NAVChart } from "../components/NAVChart";
 
 interface Position {
   broker_order_id: string;
@@ -98,6 +99,14 @@ export default function Dashboard() {
           color={parseFloat(drawdown) > 5 ? "text-red-400" : "text-white"}
         />
         <StatCard label="PDT Used" value={`${pdtUsed}/3`} />
+      </div>
+
+      {/* NAV History Chart */}
+      <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
+        <h2 className="text-lg font-semibold text-gray-100 mb-4">
+          NAV History (30 Days)
+        </h2>
+        <NAVChart />
       </div>
 
       {/* Open Positions */}
