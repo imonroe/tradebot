@@ -53,3 +53,55 @@ def test_close_trade(repo):
     updated = repo.get_trade(trade.id)
     assert updated.status == "closed"
     assert updated.pnl == Decimal("30.00")
+
+
+def test_record_daily_snapshot(repo):
+    repo.record_daily_snapshot(
+        snapshot_date=date(2026, 3, 18),
+        nav=Decimal("2550.00"),
+        realized_pnl=Decimal("50.00"),
+        unrealized_pnl=Decimal("0.00"),
+        drawdown=Decimal("0.0"),
+        day_trade_count=1,
+    )
+    history = repo.get_nav_history(days=30)
+    assert len(history) == 1
+    assert history[0]["date"] == "2026-03-18"
+    assert history[0]["nav"] == "2550.00"
+
+
+def test_get_nav_history_ordered_by_date(repo):
+    for i, d in enumerate([date(2026, 3, 16), date(2026, 3, 18), date(2026, 3, 17)]):
+        repo.record_daily_snapshot(
+            snapshot_date=d,
+            nav=Decimal(str(2500 + i * 25)),
+            realized_pnl=Decimal("0"),
+            unrealized_pnl=Decimal("0"),
+            drawdown=Decimal("0"),
+            day_trade_count=0,
+        )
+    history = repo.get_nav_history(days=30)
+    dates = [h["date"] for h in history]
+    assert dates == ["2026-03-16", "2026-03-17", "2026-03-18"]
+
+
+def test_get_nav_history_respects_days_limit(repo):
+    repo.record_daily_snapshot(
+        snapshot_date=date(2025, 1, 1),
+        nav=Decimal("2500"),
+        realized_pnl=Decimal("0"),
+        unrealized_pnl=Decimal("0"),
+        drawdown=Decimal("0"),
+        day_trade_count=0,
+    )
+    repo.record_daily_snapshot(
+        snapshot_date=date(2026, 3, 18),
+        nav=Decimal("2600"),
+        realized_pnl=Decimal("0"),
+        unrealized_pnl=Decimal("0"),
+        drawdown=Decimal("0"),
+        day_trade_count=0,
+    )
+    history = repo.get_nav_history(days=30)
+    assert len(history) == 1
+    assert history[0]["date"] == "2026-03-18"
