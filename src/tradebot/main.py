@@ -1,7 +1,8 @@
 """Main entry point for the trading bot."""
 import asyncio
 import sys
-from datetime import date, time
+from datetime import date, datetime, time
+from decimal import Decimal
 from pathlib import Path
 
 import structlog
@@ -41,6 +42,7 @@ async def bot_loop(
     """Run the trading bot polling loop."""
     state.bot_running = True
     logger.info("bot_loop_started", strategies=len(state.strategies))
+    snapshot_taken_today = False
 
     try:
         while not shutdown.is_set():
@@ -71,6 +73,24 @@ async def bot_loop(
             except Exception:
                 pass
 
+            # Record daily snapshot near end of day
+            now = datetime.now().time()
+            if now >= time(15, 50) and not snapshot_taken_today and state.repository:
+                try:
+                    state.repository.record_daily_snapshot(
+                        snapshot_date=date.today(),
+                        nav=state.portfolio.nav,
+                        realized_pnl=state.portfolio.daily_pnl,
+                        unrealized_pnl=Decimal("0"),
+                        drawdown=state.portfolio.drawdown_pct,
+                        day_trade_count=state.pdt_day_trades_used,
+                    )
+                    state.repository.commit()
+                    snapshot_taken_today = True
+                    logger.info("daily_snapshot_recorded", nav=str(state.portfolio.nav))
+                except Exception as e:
+                    logger.error("daily_snapshot_error", error=str(e))
+
             try:
                 await asyncio.wait_for(shutdown.wait(), timeout=60)
             except asyncio.TimeoutError:
@@ -93,9 +113,12 @@ async def run_bot(settings: Settings) -> None:
     broker = TradierBroker(
         base_url=settings.broker_base_url,
         api_token=settings.tradier_api_token,
+        account_id=settings.tradier_account_num,
     )
 
     # Initialize database
+    # Schema managed by Alembic — run `alembic upgrade head` to apply migrations
+    # create_all kept for development convenience
     engine = create_db_engine(settings.database_url)
     Base.metadata.create_all(engine)
     session = create_session(engine)
