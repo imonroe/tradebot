@@ -17,7 +17,8 @@ class Settings(BaseSettings):
     broker_name: str = "tradier"
     broker_base_url: str = "https://sandbox.tradier.com"
     tradier_api_token: str = ""
-    model_config = {"env_prefix": "TRADEBOT_"}
+    tradier_account_num: str = ""
+    model_config = {"env_file": ".env.paper", "env_file_encoding": "utf-8", "extra": "ignore"}
 
     @field_validator("mode")
     @classmethod
@@ -49,6 +50,8 @@ class StrikeSelection(BaseModel):
     short_call_delta: float = 0.15
     short_put_delta: float = -0.15
     wing_width: int = 5
+    short_delta: float = 0.15
+    long_delta: float = 0.40
 
 class IVFilter(BaseModel):
     min_iv_rank: float = 0.0
@@ -58,6 +61,8 @@ class EntryConfig(BaseModel):
     strike_selection: StrikeSelection = StrikeSelection()
     iv_filter: IVFilter = IVFilter()
     min_credit: float = 0.0
+    direction: str = "put"
+    max_debit: float = 3.0
 
 class ExitConfig(BaseModel):
     profit_target_pct: float = 50.0
