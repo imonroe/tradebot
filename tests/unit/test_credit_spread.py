@@ -98,7 +98,7 @@ class TestCreditSpreadStrategy:
         event = _make_market_event()
         signals = strategy.evaluate(event)
         signal = signals[0]
-        sides = {l.side for l in signal.legs}
+        sides = {leg.side for leg in signal.legs}
         assert OrderSide.SELL_TO_OPEN in sides
         assert OrderSide.BUY_TO_OPEN in sides
 
