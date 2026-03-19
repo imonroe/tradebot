@@ -125,3 +125,15 @@ def test_iron_condor_on_market_event():
     signals = strategy.evaluate(event)
 
     assert len(signals) <= 1  # 0 or 1 signal
+
+
+def test_iron_condor_reset_clears_position():
+    strategy = IronCondorStrategy(
+        name="test_ic", symbol="XSP",
+        short_call_delta=Decimal("0.15"), short_put_delta=Decimal("-0.15"),
+        wing_width=Decimal("5"), min_credit=Decimal("0.30"),
+        entry_earliest=time(9, 45), entry_latest=time(14, 0),
+    )
+    strategy._has_position = True
+    strategy.reset()
+    assert strategy._has_position is False

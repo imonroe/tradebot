@@ -131,6 +131,10 @@ class CreditSpreadStrategy(TradingStrategy):
             OrderLeg(option_symbol=long_call.symbol, side=OrderSide.BUY_TO_OPEN, quantity=1),
         ]
 
+    def reset(self) -> None:
+        """Reset position state for a new trading day."""
+        self._has_position = False
+
     def _estimate_credit(self, chain: OptionsChain, legs: list[OrderLeg]) -> Decimal:
         """Estimate net credit from mid prices."""
         credit = Decimal("0")

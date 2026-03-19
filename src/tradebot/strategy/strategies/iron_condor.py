@@ -132,6 +132,10 @@ class IronCondorStrategy(TradingStrategy):
             return exact[0]
         return min(contracts, key=lambda c: abs(c.strike - target_strike))
 
+    def reset(self) -> None:
+        """Reset position state for a new trading day."""
+        self._has_position = False
+
     def _estimate_credit(self, chain: OptionsChain, legs: list[OrderLeg]) -> Decimal:
         """Estimate net credit from mid prices."""
         credit = Decimal("0")

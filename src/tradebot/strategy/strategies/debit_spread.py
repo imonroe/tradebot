@@ -117,6 +117,10 @@ class DebitSpreadStrategy(TradingStrategy):
             OrderLeg(option_symbol=short_put.symbol, side=OrderSide.SELL_TO_OPEN, quantity=1),
         ]
 
+    def reset(self) -> None:
+        """Reset position state for a new trading day."""
+        self._has_position = False
+
     def _estimate_debit(self, chain: OptionsChain, legs: list[OrderLeg]) -> Decimal:
         """Estimate net debit from mid prices."""
         debit = Decimal("0")

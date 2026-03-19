@@ -15,3 +15,7 @@ class TradingStrategy(ABC):
     def evaluate(self, event: MarketEvent) -> list[SignalEvent]:
         """Evaluate market data and return zero or more signals."""
         ...
+
+    def reset(self) -> None:
+        """Reset state for a new trading day. Override if needed."""
+        pass
