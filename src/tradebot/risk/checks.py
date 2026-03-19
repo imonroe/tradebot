@@ -37,19 +37,24 @@ class PDTCheck:
 class MaxDailyLossCheck:
     """Halts trading when daily loss exceeds threshold."""
     max_daily_loss_pct: Decimal
-    current_daily_pnl: Decimal
-    account_value: Decimal
+    current_daily_pnl: Decimal = Decimal("0")
+    account_value: Decimal = Decimal("0")
+    portfolio: object | None = None
 
     def check(self, signal: SignalEvent) -> RiskEvent:
-        loss_pct = abs(self.current_daily_pnl) / self.account_value * 100
-        passed = self.current_daily_pnl >= 0 or loss_pct < self.max_daily_loss_pct
+        daily_pnl = self.portfolio.daily_pnl if self.portfolio else self.current_daily_pnl
+        nav = self.portfolio.nav if self.portfolio else self.account_value
+        if nav == 0:
+            nav = Decimal("1")
+        loss_pct = abs(daily_pnl) / nav * 100
+        passed = daily_pnl >= 0 or loss_pct < self.max_daily_loss_pct
         return RiskEvent(
             check_name="MaxDailyLossCheck",
             passed=passed,
             message=(
-                f"Daily P&L: ${self.current_daily_pnl} ({loss_pct:.1f}%)"
+                f"Daily P&L: ${daily_pnl} ({loss_pct:.1f}%)"
                 if passed
-                else f"Daily loss limit hit: ${self.current_daily_pnl} ({loss_pct:.1f}% >= {self.max_daily_loss_pct}%)"
+                else f"Daily loss limit hit: ${daily_pnl} ({loss_pct:.1f}% >= {self.max_daily_loss_pct}%)"
             ),
         )
 
@@ -116,17 +121,19 @@ class TimeWindowCheck:
 class MaxDrawdownCheck:
     """Halts bot when drawdown from peak exceeds threshold."""
     max_drawdown_pct: Decimal
-    current_drawdown_pct: Decimal
+    current_drawdown_pct: Decimal = Decimal("0")
+    portfolio: object | None = None
 
     def check(self, signal: SignalEvent) -> RiskEvent:
-        passed = self.current_drawdown_pct < self.max_drawdown_pct
+        drawdown = self.portfolio.drawdown_pct if self.portfolio else self.current_drawdown_pct
+        passed = drawdown < self.max_drawdown_pct
         return RiskEvent(
             check_name="MaxDrawdownCheck",
             passed=passed,
             message=(
-                f"Drawdown OK: {self.current_drawdown_pct:.1f}%"
+                f"Drawdown OK: {drawdown:.1f}%"
                 if passed
-                else f"Max drawdown hit: {self.current_drawdown_pct:.1f}% >= {self.max_drawdown_pct}%"
+                else f"Max drawdown hit: {drawdown:.1f}% >= {self.max_drawdown_pct}%"
             ),
         )
 
