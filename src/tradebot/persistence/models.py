@@ -47,3 +47,21 @@ class DailySnapshotRecord(Base):
     unrealized_pnl: Mapped[Decimal] = mapped_column(Numeric(10, 2))
     drawdown: Mapped[Decimal] = mapped_column(Numeric(6, 4))
     day_trade_count: Mapped[int] = mapped_column(Integer)
+
+
+class BacktestRunRecord(Base):
+    __tablename__ = "backtest_runs"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    strategy_name: Mapped[str] = mapped_column(String(100))
+    start_date: Mapped[date] = mapped_column(Date)
+    end_date: Mapped[date] = mapped_column(Date)
+    starting_capital: Mapped[Decimal] = mapped_column(Numeric(12, 2))
+    interval_minutes: Mapped[int] = mapped_column(Integer)
+    slippage_pct: Mapped[Decimal] = mapped_column(Numeric(6, 4), default=0)
+    ending_nav: Mapped[Decimal] = mapped_column(Numeric(12, 2))
+    total_return_pct: Mapped[Decimal] = mapped_column(Numeric(8, 2))
+    max_drawdown_pct: Mapped[Decimal] = mapped_column(Numeric(8, 2))
+    total_trades: Mapped[int] = mapped_column(Integer)
+    win_rate: Mapped[Decimal] = mapped_column(Numeric(6, 2))
+    profit_factor: Mapped[Decimal] = mapped_column(Numeric(8, 2))
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)

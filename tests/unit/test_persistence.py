@@ -105,3 +105,32 @@ def test_get_nav_history_respects_days_limit(repo):
     history = repo.get_nav_history(days=30)
     assert len(history) == 1
     assert history[0]["date"] == "2026-03-18"
+
+
+class _FakeResult:
+    """Minimal object matching BacktestResult fields for save_backtest_run."""
+    strategy_name = "test_ic"
+    start_date = date(2026, 1, 2)
+    end_date = date(2026, 3, 1)
+    starting_capital = Decimal("2500")
+    interval_minutes = 15
+    ending_nav = Decimal("2715")
+    total_return_pct = Decimal("8.60")
+    max_drawdown_pct = Decimal("3.20")
+    total_trades = 38
+    win_rate = Decimal("68.4")
+    profit_factor = Decimal("2.31")
+
+
+def test_save_backtest_run(repo):
+    record = repo.save_backtest_run(_FakeResult())
+    assert record.id is not None
+    assert record.strategy_name == "test_ic"
+    assert record.total_trades == 38
+
+
+def test_get_backtest_runs(repo):
+    repo.save_backtest_run(_FakeResult())
+    runs = repo.get_backtest_runs()
+    assert len(runs) == 1
+    assert runs[0].strategy_name == "test_ic"

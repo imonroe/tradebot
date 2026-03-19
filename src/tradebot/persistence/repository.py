@@ -3,7 +3,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
-from tradebot.persistence.models import TradeRecord, TradeLegRecord, DayTradeLogRecord, DailySnapshotRecord
+from tradebot.persistence.models import TradeRecord, TradeLegRecord, DayTradeLogRecord, DailySnapshotRecord, BacktestRunRecord
 
 class Repository:
     def __init__(self, session: Session) -> None:
@@ -96,6 +96,34 @@ class Repository:
             }
             for s in snapshots
         ]
+
+    def save_backtest_run(self, result) -> BacktestRunRecord:
+        """Save a backtest run summary."""
+        record = BacktestRunRecord(
+            strategy_name=result.strategy_name,
+            start_date=result.start_date,
+            end_date=result.end_date,
+            starting_capital=result.starting_capital,
+            interval_minutes=result.interval_minutes,
+            ending_nav=result.ending_nav,
+            total_return_pct=result.total_return_pct,
+            max_drawdown_pct=result.max_drawdown_pct,
+            total_trades=result.total_trades,
+            win_rate=result.win_rate,
+            profit_factor=result.profit_factor,
+        )
+        self._session.add(record)
+        self._session.flush()
+        return record
+
+    def get_backtest_runs(self, limit: int = 20) -> list[BacktestRunRecord]:
+        """Get recent backtest runs."""
+        stmt = (
+            select(BacktestRunRecord)
+            .order_by(BacktestRunRecord.created_at.desc())
+            .limit(limit)
+        )
+        return list(self._session.execute(stmt).scalars().all())
 
     def commit(self) -> None:
         """Commit the current session."""
