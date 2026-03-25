@@ -77,6 +77,7 @@ React 18 + Vite + TypeScript + Tailwind CSS (dark theme). Three pages: Dashboard
 - `GET /api/kill-switch` — Kill switch status
 - `POST /api/kill-switch/activate` — Halt all new trades
 - `POST /api/kill-switch/deactivate` — Resume trading
+- `GET /api/price-history` — OHLC candles with interval aggregation (1m/5m/15m/1h)
 - `WS /api/ws` — Real-time portfolio updates
 
 ## Configuration

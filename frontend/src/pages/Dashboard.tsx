@@ -2,6 +2,7 @@ import { useWebSocket } from "../hooks/useWebSocket";
 import { useApi } from "../hooks/useApi";
 import { NAVChart } from "../components/NAVChart";
 import { KillSwitch } from "../components/KillSwitch";
+import { CandlestickChart } from "../components/CandlestickChart";
 
 interface Position {
   broker_order_id: string;
@@ -179,6 +180,14 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      {/* Intraday Price Chart */}
+      <div className="bg-gray-900 border border-gray-800 rounded-lg p-4">
+        <h2 className="text-lg font-semibold text-gray-100 mb-4">
+          Intraday Price
+        </h2>
+        <CandlestickChart />
+      </div>
 
       {/* Open Positions */}
       <div>

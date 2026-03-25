@@ -167,6 +167,7 @@ position_sizing:
 | GET | `/api/kill-switch` | Kill switch status |
 | POST | `/api/kill-switch/activate` | Halt all new trades |
 | POST | `/api/kill-switch/deactivate` | Resume trading |
+| GET | `/api/price-history` | OHLC candles (interval: 1m/5m/15m/1h) |
 | WS | `/api/ws` | Real-time portfolio updates |
 
 ## Safety

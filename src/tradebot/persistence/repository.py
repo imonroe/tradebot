@@ -3,7 +3,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from sqlalchemy import select, func
 from sqlalchemy.orm import Session
-from tradebot.persistence.models import TradeRecord, TradeLegRecord, DayTradeLogRecord, DailySnapshotRecord, BacktestRunRecord
+from tradebot.persistence.models import TradeRecord, TradeLegRecord, DayTradeLogRecord, DailySnapshotRecord, BacktestRunRecord, PriceBarRecord
 
 class Repository:
     def __init__(self, session: Session) -> None:
@@ -136,6 +136,41 @@ class Repository:
             select(BacktestRunRecord)
             .order_by(BacktestRunRecord.created_at.desc())
             .limit(limit)
+        )
+        return list(self._session.execute(stmt).scalars().all())
+
+    def save_price_bar(
+        self, symbol: str, timestamp: datetime, open_: Decimal,
+        high: Decimal, low: Decimal, close: Decimal, volume: int,
+    ) -> None:
+        """Save a price bar, ignoring duplicates."""
+        existing = self._session.execute(
+            select(PriceBarRecord).where(
+                PriceBarRecord.symbol == symbol,
+                PriceBarRecord.timestamp == timestamp,
+            )
+        ).scalar_one_or_none()
+        if existing:
+            return
+        bar = PriceBarRecord(
+            symbol=symbol, timestamp=timestamp,
+            open=open_, high=high, low=low, close=close, volume=volume,
+        )
+        self._session.add(bar)
+        self._session.flush()
+
+    def get_price_bars(
+        self, symbol: str, start: datetime, end: datetime,
+    ) -> list[PriceBarRecord]:
+        """Get price bars for a symbol within a time range."""
+        stmt = (
+            select(PriceBarRecord)
+            .where(
+                PriceBarRecord.symbol == symbol,
+                PriceBarRecord.timestamp >= start,
+                PriceBarRecord.timestamp <= end,
+            )
+            .order_by(PriceBarRecord.timestamp.asc())
         )
         return list(self._session.execute(stmt).scalars().all())
 
