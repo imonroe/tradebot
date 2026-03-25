@@ -61,7 +61,7 @@ export default function Dashboard() {
   const pdtUsed =
     wsData?.pdt_day_trades_used ?? portfolio?.pdt_day_trades_used ?? 0;
   const mode = wsData?.mode ?? portfolio?.mode ?? "—";
-  const killSwitchActive = wsData?.kill_switch_active ?? killSwitchData?.active ?? false;
+  const killSwitchActive = killSwitchData?.active ?? wsData?.kill_switch_active ?? false;
   const positions = portfolio?.open_positions ?? [];
 
   const pnlNum = parseFloat(dailyPnl);

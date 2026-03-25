@@ -41,6 +41,8 @@ export function KillSwitch({ active }: KillSwitchProps) {
     <button
       onClick={toggle}
       disabled={loading}
+      aria-pressed={activeState}
+      aria-label="Kill switch"
       className={`px-3 py-1 rounded text-xs font-bold transition-colors ${
         activeState
           ? "bg-red-700 text-red-100 hover:bg-red-600"
