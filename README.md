@@ -197,11 +197,12 @@ uv run ruff check src/    # Linting
 
 ## Roadmap
 
-- [ ] Credit spread and debit spread strategies
-- [ ] NAV history chart (Recharts)
+- [x] Credit spread and debit spread strategies
+- [x] NAV history chart (Recharts)
+- [x] Alembic database migrations
+- [x] Backtesting with simulated broker + historical data
+- [x] CI/CD pipeline (GitHub Actions — backend tests, linting, frontend build)
 - [ ] Kill switch API endpoint
-- [ ] Alembic database migrations
-- [ ] Backtesting with simulated broker + historical data
 - [ ] Portfolio analytics (Sharpe ratio, win rate)
 - [ ] Slack/Telegram trade notifications
 - [ ] Additional brokers (IBKR, Alpaca)
