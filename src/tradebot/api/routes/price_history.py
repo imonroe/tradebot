@@ -14,6 +14,8 @@ def aggregate_bars(bars: list, interval_minutes: int) -> list[dict]:
     Groups bars by flooring timestamp to the interval boundary,
     then computes OHLCV for each bucket.
     """
+    # Ensure bars are sorted by timestamp for correct open/close
+    bars = sorted(bars, key=lambda b: b.timestamp)
     if not bars or interval_minutes <= 1:
         return [
             {
@@ -57,7 +59,7 @@ def aggregate_bars(bars: list, interval_minutes: int) -> list[dict]:
 @router.get("/price-history")
 async def get_price_history(
     request: Request,
-    symbol: str = "XSP",
+    symbol: str | None = None,
     interval: str = Query(default="5m", pattern="^(1m|5m|15m|1h)$"),
     hours: int = Query(default=8, ge=1, le=168),
 ):
@@ -65,6 +67,10 @@ async def get_price_history(
     state = request.app.state.app_state
     if state.repository is None:
         return []
+
+    # Default symbol from first strategy, fallback to XSP
+    if symbol is None:
+        symbol = state.strategies[0].symbol if state.strategies else "XSP"
 
     end = datetime.now()
     start = end - timedelta(hours=hours)

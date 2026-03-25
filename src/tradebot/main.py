@@ -66,8 +66,8 @@ async def bot_loop(
                                 volume=bar.volume,
                             )
                             state.repository.commit()
-                        except Exception as e:
-                            logger.debug("price_bar_save_error", error=str(e))
+                        except Exception:
+                            state.repository.rollback()
                 except Exception as e:
                     logger.error("market_data_error", symbol=strategy.symbol, error=str(e))
 

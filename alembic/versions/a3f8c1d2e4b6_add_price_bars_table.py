@@ -32,11 +32,7 @@ def upgrade() -> None:
         sa.PrimaryKeyConstraint("id"),
         sa.UniqueConstraint("symbol", "timestamp", name="uq_price_bar_symbol_ts"),
     )
-    op.create_index(op.f("ix_price_bars_symbol"), "price_bars", ["symbol"])
-    op.create_index(op.f("ix_price_bars_timestamp"), "price_bars", ["timestamp"])
 
 
 def downgrade() -> None:
-    op.drop_index(op.f("ix_price_bars_timestamp"), table_name="price_bars")
-    op.drop_index(op.f("ix_price_bars_symbol"), table_name="price_bars")
     op.drop_table("price_bars")

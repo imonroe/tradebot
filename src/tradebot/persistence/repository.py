@@ -2,6 +2,7 @@
 from datetime import date, datetime
 from decimal import Decimal
 from sqlalchemy import select, func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 from tradebot.persistence.models import TradeRecord, TradeLegRecord, DayTradeLogRecord, DailySnapshotRecord, BacktestRunRecord, PriceBarRecord
 
@@ -143,21 +144,16 @@ class Repository:
         self, symbol: str, timestamp: datetime, open_: Decimal,
         high: Decimal, low: Decimal, close: Decimal, volume: int,
     ) -> None:
-        """Save a price bar, ignoring duplicates."""
-        existing = self._session.execute(
-            select(PriceBarRecord).where(
-                PriceBarRecord.symbol == symbol,
-                PriceBarRecord.timestamp == timestamp,
-            )
-        ).scalar_one_or_none()
-        if existing:
-            return
+        """Save a price bar, silently ignoring duplicates via IntegrityError."""
         bar = PriceBarRecord(
             symbol=symbol, timestamp=timestamp,
             open=open_, high=high, low=low, close=close, volume=volume,
         )
         self._session.add(bar)
-        self._session.flush()
+        try:
+            self._session.flush()
+        except IntegrityError:
+            self._session.rollback()
 
     def get_price_bars(
         self, symbol: str, start: datetime, end: datetime,
@@ -177,3 +173,7 @@ class Repository:
     def commit(self) -> None:
         """Commit the current session."""
         self._session.commit()
+
+    def rollback(self) -> None:
+        """Rollback the current session."""
+        self._session.rollback()

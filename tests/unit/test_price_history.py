@@ -9,7 +9,6 @@ from sqlalchemy.pool import StaticPool
 
 from tradebot.api.routes.price_history import aggregate_bars
 from tradebot.persistence.database import Base
-from tradebot.persistence.models import PriceBarRecord
 from tradebot.persistence.repository import Repository
 
 
@@ -54,6 +53,7 @@ class TestSavePriceBar:
             low=Decimal("579.00"), close=Decimal("580.50"),
             volume=1000,
         )
+        repo.commit()  # Commit first bar so rollback on duplicate doesn't lose it
         # Same symbol + timestamp should be silently ignored
         repo.save_price_bar(
             symbol="XSP", timestamp=ts,
@@ -193,11 +193,12 @@ class TestPriceHistoryEndpoint:
         assert response.json() == []
 
     def test_with_data(self, client, repo):
-        now = datetime.now().replace(second=0, microsecond=0)
+        from datetime import timedelta
+        base = datetime.now().replace(second=0, microsecond=0) - timedelta(minutes=15)
         for i in range(10):
             repo.save_price_bar(
                 symbol="XSP",
-                timestamp=now.replace(minute=i),
+                timestamp=base + timedelta(minutes=i),
                 open_=Decimal("580"), high=Decimal("581"),
                 low=Decimal("579"), close=Decimal("580"),
                 volume=100,

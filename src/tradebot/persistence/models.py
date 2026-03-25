@@ -53,8 +53,8 @@ class PriceBarRecord(Base):
     __tablename__ = "price_bars"
     __table_args__ = (UniqueConstraint("symbol", "timestamp", name="uq_price_bar_symbol_ts"),)
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    symbol: Mapped[str] = mapped_column(String(20), index=True)
-    timestamp: Mapped[datetime] = mapped_column(DateTime, index=True)
+    symbol: Mapped[str] = mapped_column(String(20))
+    timestamp: Mapped[datetime] = mapped_column(DateTime)
     open: Mapped[Decimal] = mapped_column(Numeric(10, 4))
     high: Mapped[Decimal] = mapped_column(Numeric(10, 4))
     low: Mapped[Decimal] = mapped_column(Numeric(10, 4))

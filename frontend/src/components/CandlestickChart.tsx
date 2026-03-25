@@ -8,7 +8,6 @@ import {
   Tooltip,
   ResponsiveContainer,
   Cell,
-  ErrorBar,
 } from "recharts";
 import { useApi } from "../hooks/useApi";
 
@@ -29,12 +28,8 @@ interface CandlePoint {
   low: number;
   close: number;
   volume: number;
-  // For bar chart: body bottom and body height
   bodyBottom: number;
   bodyHeight: number;
-  // For error bars: wick above and below the body
-  wickUp: number;
-  wickDown: number;
   isUp: boolean;
 }
 
@@ -45,6 +40,43 @@ const HOURS_OPTIONS = [
   { label: "8h", value: 8 },
   { label: "1D", value: 24 },
 ] as const;
+
+/* Custom shape that renders candle body + upper/lower wicks */
+function CandleShape(props: Record<string, unknown>) {
+  const { x, y, width, height, payload } = props as {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    payload: CandlePoint;
+  };
+
+  if (!payload) return null;
+
+  const { high, low, isUp } = payload;
+  const bodyTop = Math.max(payload.open, payload.close);
+  const bodyBottom = Math.min(payload.open, payload.close);
+  const yScale = height / payload.bodyHeight;
+
+  // Wick positions relative to body
+  const wickX = x + width / 2;
+  const wickTopY = y - (high - bodyTop) * yScale;
+  const wickBottomY = y + height + (bodyBottom - low) * yScale;
+
+  const fill = isUp ? "#4ade80" : "#f87171";
+  const stroke = isUp ? "#22c55e" : "#ef4444";
+
+  return (
+    <g>
+      {/* Upper wick */}
+      <line x1={wickX} y1={wickTopY} x2={wickX} y2={y} stroke="#9ca3af" strokeWidth={1} />
+      {/* Lower wick */}
+      <line x1={wickX} y1={y + height} x2={wickX} y2={wickBottomY} stroke="#9ca3af" strokeWidth={1} />
+      {/* Body */}
+      <rect x={x} y={y} width={width} height={Math.max(height, 1)} fill={fill} stroke={stroke} />
+    </g>
+  );
+}
 
 export function CandlestickChart() {
   const [interval, setInterval] = useState<string>("5m");
@@ -70,8 +102,7 @@ export function CandlestickChart() {
     const c = parseFloat(b.close);
     const isUp = c >= o;
     const bodyBottom = Math.min(o, c);
-    const bodyHeight = Math.abs(c - o) || 0.01; // min height so bar is visible
-    const bodyTop = Math.max(o, c);
+    const bodyHeight = Math.abs(c - o) || 0.01;
 
     return {
       time: new Date(b.timestamp).toLocaleTimeString("en-US", {
@@ -87,13 +118,10 @@ export function CandlestickChart() {
       volume: b.volume,
       bodyBottom,
       bodyHeight,
-      wickUp: h - bodyTop,
-      wickDown: bodyBottom - l,
       isUp,
     };
   });
 
-  // Compute Y axis domain with padding
   const allLows = chartData.map((d) => d.low);
   const allHighs = chartData.map((d) => d.high);
   const minPrice = Math.min(...allLows);
@@ -156,13 +184,6 @@ export function CandlestickChart() {
             tickFormatter={(v: number) => v.toFixed(2)}
           />
           <Tooltip
-            contentStyle={{
-              backgroundColor: "#1f2937",
-              border: "1px solid #374151",
-              borderRadius: "0.5rem",
-              color: "#f3f4f6",
-              fontSize: "12px",
-            }}
             content={({ active, payload }) => {
               if (!active || !payload?.length) return null;
               const d = payload[0].payload as CandlePoint;
@@ -181,21 +202,19 @@ export function CandlestickChart() {
               );
             }}
           />
-          {/* Candle bodies as stacked bars */}
+          {/* Invisible base bar for stacking */}
           <Bar dataKey="bodyBottom" stackId="candle" fill="transparent" isAnimationActive={false} />
-          <Bar dataKey="bodyHeight" stackId="candle" isAnimationActive={false}>
-            <ErrorBar
-              dataKey="wickUp"
-              direction="y"
-              width={1}
-              strokeWidth={1}
-              stroke="#9ca3af"
-            />
+          {/* Candle body + wicks via custom shape */}
+          <Bar
+            dataKey="bodyHeight"
+            stackId="candle"
+            isAnimationActive={false}
+            shape={<CandleShape />}
+          >
             {chartData.map((entry, index) => (
               <Cell
                 key={index}
                 fill={entry.isUp ? "#4ade80" : "#f87171"}
-                stroke={entry.isUp ? "#22c55e" : "#ef4444"}
               />
             ))}
           </Bar>
