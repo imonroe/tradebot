@@ -147,16 +147,17 @@ class Repository:
         self, symbol: str, timestamp: datetime, open_: Decimal,
         high: Decimal, low: Decimal, close: Decimal, volume: int,
     ) -> None:
-        """Save a price bar, silently ignoring duplicates via IntegrityError."""
+        """Save a price bar, silently ignoring duplicates via savepoint."""
         bar = PriceBarRecord(
             symbol=symbol, timestamp=timestamp,
             open=open_, high=high, low=low, close=close, volume=volume,
         )
+        nested = self._session.begin_nested()
         self._session.add(bar)
         try:
-            self._session.flush()
+            nested.commit()
         except IntegrityError:
-            self._session.rollback()
+            nested.rollback()
 
     def get_price_bars(
         self, symbol: str, start: datetime, end: datetime,

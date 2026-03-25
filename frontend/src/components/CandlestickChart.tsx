@@ -211,9 +211,9 @@ export function CandlestickChart() {
             isAnimationActive={false}
             shape={<CandleShape />}
           >
-            {chartData.map((entry, index) => (
+            {chartData.map((entry) => (
               <Cell
-                key={index}
+                key={entry.timestamp}
                 fill={entry.isUp ? "#4ade80" : "#f87171"}
               />
             ))}
