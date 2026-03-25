@@ -1,9 +1,15 @@
 """Individual risk check implementations."""
+from __future__ import annotations
+
 from dataclasses import dataclass
 from datetime import date, time, timedelta
 from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from tradebot.core.events import RiskEvent, SignalEvent
+
+if TYPE_CHECKING:
+    from tradebot.api.state import AppState
 
 
 @dataclass
@@ -152,5 +158,24 @@ class DuplicateCheck:
                 f"No duplicate: {signal.symbol} not in open positions"
                 if passed
                 else f"Duplicate position: {signal.symbol} already open"
+            ),
+        )
+
+
+@dataclass
+class KillSwitchCheck:
+    """Rejects all signals when the kill switch is active."""
+    state: AppState
+
+    def check(self, signal: SignalEvent) -> RiskEvent:
+        passed = not self.state.kill_switch_active
+        reason = self.state.kill_switch_reason or "no reason given"
+        return RiskEvent(
+            check_name="KillSwitchCheck",
+            passed=passed,
+            message=(
+                "Kill switch inactive"
+                if passed
+                else f"Kill switch active: {reason}"
             ),
         )
