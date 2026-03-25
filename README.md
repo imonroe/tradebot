@@ -161,6 +161,7 @@ position_sizing:
 | GET | `/api/health` | Bot status and mode |
 | GET | `/api/portfolio` | NAV, P&L, drawdown, positions |
 | GET | `/api/portfolio/positions` | Open positions |
+| GET | `/api/portfolio/analytics` | Performance metrics (Sharpe, win rate, P&L) |
 | GET | `/api/trades` | Trade history (last 100) |
 | GET | `/api/strategies` | Loaded strategies and status |
 | GET | `/api/kill-switch` | Kill switch status |
@@ -206,7 +207,7 @@ uv run ruff check src/    # Linting
 - [x] Backtesting with simulated broker + historical data
 - [x] CI/CD pipeline (GitHub Actions — backend tests, linting, frontend build)
 - [x] Kill switch API endpoint
-- [ ] Portfolio analytics (Sharpe ratio, win rate)
+- [x] Portfolio analytics (Sharpe ratio, win rate, profit factor)
 - [ ] Slack/Telegram trade notifications
 - [ ] Additional brokers (IBKR, Alpaca)
 

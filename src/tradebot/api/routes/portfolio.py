@@ -1,5 +1,9 @@
 """Portfolio API routes."""
+from decimal import Decimal
+
 from fastapi import APIRouter, Request
+
+from tradebot.analytics.metrics import compute_trade_metrics, compute_sharpe_ratio
 
 router = APIRouter(tags=["portfolio"])
 
@@ -36,6 +40,38 @@ async def get_nav_history(request: Request, days: int = 30):
     if state.repository is None:
         return []
     return state.repository.get_nav_history(days=days)
+
+
+@router.get("/portfolio/analytics")
+async def get_analytics(request: Request):
+    """Get portfolio performance analytics from trade history and daily snapshots."""
+    state = request.app.state.app_state
+    if state.repository is None:
+        return compute_trade_metrics([])
+
+    # Compute trade metrics from closed trades
+    closed_trades = state.repository.get_closed_trades()
+    trade_dicts = [{"pnl": t.pnl} for t in closed_trades if t.pnl is not None]
+    metrics = compute_trade_metrics(trade_dicts)
+
+    # Compute Sharpe ratio from daily NAV snapshots
+    snapshots = state.repository.get_all_daily_snapshots()
+    daily_navs = [s.nav for s in snapshots]
+    sharpe = compute_sharpe_ratio(daily_navs)
+
+    # Max drawdown from snapshots
+    max_drawdown = Decimal("0")
+    for s in snapshots:
+        if s.drawdown > max_drawdown:
+            max_drawdown = s.drawdown
+
+    # Serialize Decimals to strings
+    result = {}
+    for k, v in metrics.items():
+        result[k] = str(v) if isinstance(v, Decimal) else v
+    result["sharpe_ratio"] = str(sharpe)
+    result["max_drawdown_pct"] = str(max_drawdown)
+    return result
 
 
 @router.get("/portfolio/positions")

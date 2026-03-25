@@ -60,6 +60,7 @@ All events are defined in `src/tradebot/core/events.py`. The bus is in `src/trad
 - **`execution/brokers/tradier.py`** — Tradier API client implementing `Broker` protocol
 - **`execution/brokers/paper.py`** — Simulated broker with instant fills and local state (no API needed)
 - **`portfolio/tracker.py`** — NAV, P&L, drawdown, open position tracking
+- **`analytics/metrics.py`** — Shared trade metrics (win rate, Sharpe ratio, profit factor) used by API and backtesting
 - **`persistence/`** — SQLAlchemy ORM models + repository pattern; SQLite dev / PostgreSQL prod
 
 ### Frontend
@@ -70,6 +71,7 @@ React 18 + Vite + TypeScript + Tailwind CSS (dark theme). Three pages: Dashboard
 
 - `GET /api/health` — Status + mode
 - `GET /api/portfolio` — NAV, P&L, positions, PDT count
+- `GET /api/portfolio/analytics` — Performance metrics (Sharpe, win rate, profit factor)
 - `GET /api/trades` — Last 100 trades
 - `GET /api/strategies` — Loaded strategies
 - `GET /api/kill-switch` — Kill switch status

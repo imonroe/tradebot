@@ -50,6 +50,20 @@ class Repository:
         stmt = select(TradeRecord).where(TradeRecord.status == "open")
         return list(self._session.execute(stmt).scalars().all())
 
+    def get_closed_trades(self) -> list[TradeRecord]:
+        """Get all closed trades, ordered by exit time ascending."""
+        stmt = (
+            select(TradeRecord)
+            .where(TradeRecord.status == "closed")
+            .order_by(TradeRecord.exit_time.asc())
+        )
+        return list(self._session.execute(stmt).scalars().all())
+
+    def get_all_daily_snapshots(self) -> list[DailySnapshotRecord]:
+        """Get all daily snapshots ordered by date ascending."""
+        stmt = select(DailySnapshotRecord).order_by(DailySnapshotRecord.snapshot_date.asc())
+        return list(self._session.execute(stmt).scalars().all())
+
     def get_recent_trades(self, limit: int = 100) -> list[TradeRecord]:
         stmt = select(TradeRecord).order_by(TradeRecord.entry_time.desc()).limit(limit)
         return list(self._session.execute(stmt).scalars().all())

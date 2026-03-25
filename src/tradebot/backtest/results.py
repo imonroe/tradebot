@@ -3,50 +3,24 @@ from dataclasses import dataclass, field
 from datetime import date
 from decimal import Decimal
 
+from tradebot.analytics.metrics import compute_trade_metrics
+
 
 def compute_metrics(trades: list[dict]) -> dict:
-    """Compute trade statistics from a list of trades with 'pnl' field."""
-    if not trades:
-        return {
-            "total_trades": 0,
-            "winning_trades": 0,
-            "losing_trades": 0,
-            "win_rate": Decimal("0"),
-            "avg_win": Decimal("0"),
-            "avg_loss": Decimal("0"),
-            "profit_factor": Decimal("0"),
-        }
+    """Compute trade statistics from a list of trades with 'pnl' field.
 
-    wins = [t for t in trades if t["pnl"] > 0]
-    losses = [t for t in trades if t["pnl"] < 0]
-    total = len(trades)
-    n_wins = len(wins)
-    n_losses = len(losses)
-
-    win_rate = Decimal(str(round(n_wins / total * 100, 1)))
-    avg_win = (
-        sum(t["pnl"] for t in wins) / n_wins if n_wins else Decimal("0")
-    )
-    avg_loss = (
-        sum(t["pnl"] for t in losses) / n_losses if n_losses else Decimal("0")
-    )
-
-    gross_profit = sum(t["pnl"] for t in wins)
-    gross_loss = abs(sum(t["pnl"] for t in losses))
-
-    if gross_loss == 0:
-        profit_factor = Decimal("Infinity") if gross_profit > 0 else Decimal("0")
-    else:
-        profit_factor = Decimal(str(round(gross_profit / gross_loss, 2)))
-
+    Thin wrapper around the shared analytics module for backwards compatibility.
+    """
+    result = compute_trade_metrics(trades)
+    # Return only the fields the backtest engine expects
     return {
-        "total_trades": total,
-        "winning_trades": n_wins,
-        "losing_trades": n_losses,
-        "win_rate": win_rate,
-        "avg_win": avg_win.quantize(Decimal("0.01")),
-        "avg_loss": avg_loss.quantize(Decimal("0.01")),
-        "profit_factor": profit_factor,
+        "total_trades": result["total_trades"],
+        "winning_trades": result["winning_trades"],
+        "losing_trades": result["losing_trades"],
+        "win_rate": result["win_rate"],
+        "avg_win": result["avg_win"],
+        "avg_loss": result["avg_loss"],
+        "profit_factor": result["profit_factor"],
     }
 
 
