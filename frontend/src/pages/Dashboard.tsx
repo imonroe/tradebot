@@ -38,10 +38,19 @@ function StatCard({
   );
 }
 
+interface KillSwitchData {
+  active: boolean;
+  reason: string | null;
+}
+
 export default function Dashboard() {
   const { data: wsData, connected } = useWebSocket();
   const { data: portfolio, loading } = useApi<PortfolioData>(
     "/api/portfolio",
+    10000
+  );
+  const { data: killSwitchData } = useApi<KillSwitchData>(
+    "/api/kill-switch",
     10000
   );
 
@@ -52,7 +61,7 @@ export default function Dashboard() {
   const pdtUsed =
     wsData?.pdt_day_trades_used ?? portfolio?.pdt_day_trades_used ?? 0;
   const mode = wsData?.mode ?? portfolio?.mode ?? "—";
-  const killSwitchActive = wsData?.kill_switch_active ?? false;
+  const killSwitchActive = wsData?.kill_switch_active ?? killSwitchData?.active ?? false;
   const positions = portfolio?.open_positions ?? [];
 
   const pnlNum = parseFloat(dailyPnl);

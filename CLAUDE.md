@@ -56,7 +56,7 @@ All events are defined in `src/tradebot/core/events.py`. The bus is in `src/trad
 - **`data/sources/paper.py`** — Synthetic market data with random-walk prices and approximate Greeks
 - **`data/sources/recorder.py`** — Passthrough wrapper that saves data source responses to JSON files
 - **`strategy/`** — Abstract base + iron condor implementation; strategies loaded from YAML configs in `config/strategies/`
-- **`risk/manager.py`** — Chains 8 risk checks (kill switch, PDT, daily loss, drawdown, time window, position size, spread width, duplicate) that gate every signal
+- **`risk/manager.py`** — Chains risk checks that gate every signal; 8 checks available (kill switch, PDT, daily loss, drawdown, time window, position size, spread width, duplicate), 5 wired in `main.py` (kill switch, time window, daily loss, drawdown, duplicate)
 - **`execution/brokers/tradier.py`** — Tradier API client implementing `Broker` protocol
 - **`execution/brokers/paper.py`** — Simulated broker with instant fills and local state (no API needed)
 - **`portfolio/tracker.py`** — NAV, P&L, drawdown, open position tracking
