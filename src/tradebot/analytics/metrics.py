@@ -32,7 +32,7 @@ def compute_trade_metrics(trades: list[dict]) -> dict:
     n_wins = len(wins)
     n_losses = len(losses)
 
-    win_rate = Decimal(str(round(n_wins / total * 100, 1)))
+    win_rate = (Decimal(n_wins) / Decimal(total) * Decimal("100")).quantize(Decimal("0.1"))
     avg_win = sum(t["pnl"] for t in wins) / n_wins if n_wins else Decimal("0")
     avg_loss = sum(t["pnl"] for t in losses) / n_losses if n_losses else Decimal("0")
 
@@ -90,7 +90,7 @@ def compute_trade_metrics(trades: list[dict]) -> dict:
 def compute_sharpe_ratio(daily_navs: list[Decimal], risk_free_rate: float = 0.0) -> Decimal:
     """Compute annualized Sharpe ratio from a series of daily NAV values.
 
-    Uses daily log returns. Assumes 252 trading days per year.
+    Uses daily simple returns (curr / prev - 1). Assumes 252 trading days per year.
     Returns Decimal("0") if fewer than 2 data points.
     """
     if len(daily_navs) < 2:
@@ -110,8 +110,9 @@ def compute_sharpe_ratio(daily_navs: list[Decimal], risk_free_rate: float = 0.0)
     n = len(returns)
     daily_rf = risk_free_rate / 252
 
-    mean_return = sum(returns) / n - daily_rf
-    variance = sum((r - (sum(returns) / n)) ** 2 for r in returns) / (n - 1) if n > 1 else 0
+    mean_raw_return = sum(returns) / n
+    mean_return = mean_raw_return - daily_rf
+    variance = sum((r - mean_raw_return) ** 2 for r in returns) / (n - 1) if n > 1 else 0
     std_dev = math.sqrt(variance)
 
     if std_dev == 0:

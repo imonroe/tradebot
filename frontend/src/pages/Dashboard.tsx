@@ -168,7 +168,7 @@ export default function Dashboard() {
               value={`$${analytics.total_pnl}`}
               color={parseFloat(analytics.total_pnl) >= 0 ? "text-green-400" : "text-red-400"}
             />
-            <StatCard label="Total Trades" value={`${analytics.winning_trades}W / ${analytics.losing_trades}L`} />
+            <StatCard label="Total Trades" value={`${analytics.total_trades} (${analytics.winning_trades}W / ${analytics.losing_trades}L)`} />
             <StatCard label="Avg Win" value={`$${analytics.avg_win}`} color="text-green-400" />
             <StatCard label="Avg Loss" value={`$${analytics.avg_loss}`} color="text-red-400" />
             <StatCard

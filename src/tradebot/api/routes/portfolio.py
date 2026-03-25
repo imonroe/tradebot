@@ -47,25 +47,27 @@ async def get_analytics(request: Request):
     """Get portfolio performance analytics from trade history and daily snapshots."""
     state = request.app.state.app_state
     if state.repository is None:
-        return compute_trade_metrics([])
+        metrics = compute_trade_metrics([])
+        sharpe = Decimal("0")
+        max_drawdown = Decimal("0")
+    else:
+        # Compute trade metrics from closed trades
+        closed_trades = state.repository.get_closed_trades()
+        trade_dicts = [{"pnl": t.pnl} for t in closed_trades if t.pnl is not None]
+        metrics = compute_trade_metrics(trade_dicts)
 
-    # Compute trade metrics from closed trades
-    closed_trades = state.repository.get_closed_trades()
-    trade_dicts = [{"pnl": t.pnl} for t in closed_trades if t.pnl is not None]
-    metrics = compute_trade_metrics(trade_dicts)
+        # Compute Sharpe ratio from daily NAV snapshots
+        snapshots = state.repository.get_all_daily_snapshots()
+        daily_navs = [s.nav for s in snapshots]
+        sharpe = compute_sharpe_ratio(daily_navs)
 
-    # Compute Sharpe ratio from daily NAV snapshots
-    snapshots = state.repository.get_all_daily_snapshots()
-    daily_navs = [s.nav for s in snapshots]
-    sharpe = compute_sharpe_ratio(daily_navs)
+        # Max drawdown from snapshots
+        max_drawdown = Decimal("0")
+        for s in snapshots:
+            if s.drawdown > max_drawdown:
+                max_drawdown = s.drawdown
 
-    # Max drawdown from snapshots
-    max_drawdown = Decimal("0")
-    for s in snapshots:
-        if s.drawdown > max_drawdown:
-            max_drawdown = s.drawdown
-
-    # Serialize Decimals to strings
+    # Serialize Decimals to strings — consistent shape regardless of repo presence
     result = {}
     for k, v in metrics.items():
         result[k] = str(v) if isinstance(v, Decimal) else v
