@@ -21,5 +21,7 @@ class AppState:
     mode: str = "paper"
     bot_running: bool = False
     pdt_day_trades_used: int = 0
+    kill_switch_active: bool = False
+    kill_switch_reason: str | None = None
     repository: Repository | None = None
     ws_manager: "ConnectionManager | None" = None

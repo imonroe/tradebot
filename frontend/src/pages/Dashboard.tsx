@@ -1,6 +1,7 @@
 import { useWebSocket } from "../hooks/useWebSocket";
 import { useApi } from "../hooks/useApi";
 import { NAVChart } from "../components/NAVChart";
+import { KillSwitch } from "../components/KillSwitch";
 
 interface Position {
   broker_order_id: string;
@@ -51,6 +52,7 @@ export default function Dashboard() {
   const pdtUsed =
     wsData?.pdt_day_trades_used ?? portfolio?.pdt_day_trades_used ?? 0;
   const mode = wsData?.mode ?? portfolio?.mode ?? "—";
+  const killSwitchActive = wsData?.kill_switch_active ?? false;
   const positions = portfolio?.open_positions ?? [];
 
   const pnlNum = parseFloat(dailyPnl);
@@ -87,6 +89,7 @@ export default function Dashboard() {
           />
           {connected ? "Live" : "Disconnected"}
         </span>
+        <KillSwitch active={killSwitchActive} />
       </div>
 
       {/* Stats grid */}

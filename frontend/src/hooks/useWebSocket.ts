@@ -8,6 +8,7 @@ interface PortfolioSnapshot {
   mode: string;
   bot_running: boolean;
   pdt_day_trades_used: number;
+  kill_switch_active: boolean;
 }
 
 export function useWebSocket() {

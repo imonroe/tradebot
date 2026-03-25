@@ -19,6 +19,9 @@ class RiskManager:
     def add_check(self, check: object) -> None:
         self._checks.append(check)
 
+    def insert_check(self, index: int, check: object) -> None:
+        self._checks.insert(index, check)
+
     async def on_signal(self, signal: SignalEvent) -> list:
         """Process a signal through all risk checks."""
         events: list = []

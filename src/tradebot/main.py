@@ -21,6 +21,7 @@ from tradebot.persistence.repository import Repository
 from tradebot.portfolio.tracker import PortfolioTracker
 from tradebot.risk.checks import (
     DuplicateCheck,
+    KillSwitchCheck,
     MaxDailyLossCheck,
     MaxDrawdownCheck,
     TimeWindowCheck,
@@ -69,6 +70,7 @@ async def bot_loop(
                         "positions": len(state.portfolio.open_positions),
                         "bot_running": state.bot_running,
                         "pdt_day_trades_used": state.pdt_day_trades_used,
+                        "kill_switch_active": state.kill_switch_active,
                     })
             except Exception:
                 pass
@@ -178,6 +180,9 @@ async def run_bot(settings: Settings) -> None:
         mode=settings.mode,
         repository=repo,
     )
+
+    # Kill switch check runs first — rejects everything when active
+    risk_manager.insert_check(0, KillSwitchCheck(state=state))
 
     # Wire event bus
     bus = EventBus()

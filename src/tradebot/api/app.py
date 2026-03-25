@@ -25,14 +25,16 @@ def create_app(state: AppState) -> FastAPI:
             "status": "ok",
             "mode": state.mode,
             "bot_running": state.bot_running,
+            "kill_switch_active": state.kill_switch_active,
         }
 
     # Import and include route modules
-    from tradebot.api.routes import portfolio, trades, strategies
+    from tradebot.api.routes import portfolio, trades, strategies, kill_switch
 
     app.include_router(portfolio.router, prefix="/api")
     app.include_router(trades.router, prefix="/api")
     app.include_router(strategies.router, prefix="/api")
+    app.include_router(kill_switch.router, prefix="/api")
 
     # WebSocket
     from tradebot.api.websocket import ConnectionManager
@@ -55,6 +57,7 @@ def create_app(state: AppState) -> FastAPI:
                 "mode": state.mode,
                 "bot_running": state.bot_running,
                 "pdt_day_trades_used": state.pdt_day_trades_used,
+                "kill_switch_active": state.kill_switch_active,
             })
             # Keep connection alive, wait for disconnect
             while True:

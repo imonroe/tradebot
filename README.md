@@ -163,6 +163,9 @@ position_sizing:
 | GET | `/api/portfolio/positions` | Open positions |
 | GET | `/api/trades` | Trade history (last 100) |
 | GET | `/api/strategies` | Loaded strategies and status |
+| GET | `/api/kill-switch` | Kill switch status |
+| POST | `/api/kill-switch/activate` | Halt all new trades |
+| POST | `/api/kill-switch/deactivate` | Resume trading |
 | WS | `/api/ws` | Real-time portfolio updates |
 
 ## Safety
@@ -202,7 +205,7 @@ uv run ruff check src/    # Linting
 - [x] Alembic database migrations
 - [x] Backtesting with simulated broker + historical data
 - [x] CI/CD pipeline (GitHub Actions — backend tests, linting, frontend build)
-- [ ] Kill switch API endpoint
+- [x] Kill switch API endpoint
 - [ ] Portfolio analytics (Sharpe ratio, win rate)
 - [ ] Slack/Telegram trade notifications
 - [ ] Additional brokers (IBKR, Alpaca)

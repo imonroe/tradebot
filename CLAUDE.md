@@ -56,7 +56,7 @@ All events are defined in `src/tradebot/core/events.py`. The bus is in `src/trad
 - **`data/sources/paper.py`** — Synthetic market data with random-walk prices and approximate Greeks
 - **`data/sources/recorder.py`** — Passthrough wrapper that saves data source responses to JSON files
 - **`strategy/`** — Abstract base + iron condor implementation; strategies loaded from YAML configs in `config/strategies/`
-- **`risk/manager.py`** — Chains 7 risk checks (PDT, daily loss, drawdown, time window, position size, spread width, duplicate) that gate every signal
+- **`risk/manager.py`** — Chains 8 risk checks (kill switch, PDT, daily loss, drawdown, time window, position size, spread width, duplicate) that gate every signal
 - **`execution/brokers/tradier.py`** — Tradier API client implementing `Broker` protocol
 - **`execution/brokers/paper.py`** — Simulated broker with instant fills and local state (no API needed)
 - **`portfolio/tracker.py`** — NAV, P&L, drawdown, open position tracking
@@ -72,6 +72,9 @@ React 18 + Vite + TypeScript + Tailwind CSS (dark theme). Three pages: Dashboard
 - `GET /api/portfolio` — NAV, P&L, positions, PDT count
 - `GET /api/trades` — Last 100 trades
 - `GET /api/strategies` — Loaded strategies
+- `GET /api/kill-switch` — Kill switch status
+- `POST /api/kill-switch/activate` — Halt all new trades
+- `POST /api/kill-switch/deactivate` — Resume trading
 - `WS /api/ws` — Real-time portfolio updates
 
 ## Configuration
