@@ -52,11 +52,14 @@ class Repository:
         return list(self._session.execute(stmt).scalars().all())
 
     def get_closed_trades(self) -> list[TradeRecord]:
-        """Get all closed trades, ordered by exit time ascending."""
+        """Get all closed trades, ordered by exit time ascending (NULLs last, stable by id)."""
         stmt = (
             select(TradeRecord)
             .where(TradeRecord.status == "closed")
-            .order_by(TradeRecord.exit_time.asc())
+            .order_by(
+                TradeRecord.exit_time.asc().nulls_last(),
+                TradeRecord.id.asc(),
+            )
         )
         return list(self._session.execute(stmt).scalars().all())
 
