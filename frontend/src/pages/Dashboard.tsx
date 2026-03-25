@@ -38,6 +38,24 @@ function StatCard({
   );
 }
 
+interface AnalyticsData {
+  total_trades: number;
+  winning_trades: number;
+  losing_trades: number;
+  win_rate: string;
+  avg_win: string;
+  avg_loss: string;
+  largest_win: string;
+  largest_loss: string;
+  profit_factor: string;
+  total_pnl: string;
+  avg_trade_pnl: string;
+  current_streak: number;
+  streak_type: string;
+  sharpe_ratio: string;
+  max_drawdown_pct: string;
+}
+
 interface KillSwitchData {
   active: boolean;
   reason: string | null;
@@ -52,6 +70,10 @@ export default function Dashboard() {
   const { data: killSwitchData } = useApi<KillSwitchData>(
     "/api/kill-switch",
     10000
+  );
+  const { data: analytics } = useApi<AnalyticsData>(
+    "/api/portfolio/analytics",
+    30000
   );
 
   // Use WebSocket data if available, fall back to REST
@@ -120,6 +142,43 @@ export default function Dashboard() {
         </h2>
         <NAVChart />
       </div>
+
+      {/* Performance Analytics */}
+      {analytics && analytics.total_trades > 0 && (
+        <div>
+          <h2 className="text-lg font-semibold mb-3">Performance Analytics</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <StatCard
+              label="Win Rate"
+              value={`${analytics.win_rate}%`}
+              color={parseFloat(analytics.win_rate) >= 50 ? "text-green-400" : "text-red-400"}
+            />
+            <StatCard
+              label="Profit Factor"
+              value={analytics.profit_factor}
+              color={parseFloat(analytics.profit_factor) >= 1 ? "text-green-400" : "text-red-400"}
+            />
+            <StatCard
+              label="Sharpe Ratio"
+              value={analytics.sharpe_ratio}
+              color={parseFloat(analytics.sharpe_ratio) >= 1 ? "text-green-400" : "text-white"}
+            />
+            <StatCard
+              label="Total P&L"
+              value={`$${analytics.total_pnl}`}
+              color={parseFloat(analytics.total_pnl) >= 0 ? "text-green-400" : "text-red-400"}
+            />
+            <StatCard label="Total Trades" value={`${analytics.total_trades} (${analytics.winning_trades}W / ${analytics.losing_trades}L)`} />
+            <StatCard label="Avg Win" value={`$${analytics.avg_win}`} color="text-green-400" />
+            <StatCard label="Avg Loss" value={`$${analytics.avg_loss}`} color="text-red-400" />
+            <StatCard
+              label="Streak"
+              value={`${analytics.current_streak} ${analytics.streak_type}`}
+              color={analytics.streak_type === "win" ? "text-green-400" : analytics.streak_type === "loss" ? "text-red-400" : "text-white"}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Open Positions */}
       <div>
