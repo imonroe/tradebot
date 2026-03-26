@@ -29,12 +29,13 @@ def create_app(state: AppState) -> FastAPI:
         }
 
     # Import and include route modules
-    from tradebot.api.routes import portfolio, trades, strategies, kill_switch
+    from tradebot.api.routes import portfolio, trades, strategies, kill_switch, backtest
 
     app.include_router(portfolio.router, prefix="/api")
     app.include_router(trades.router, prefix="/api")
     app.include_router(strategies.router, prefix="/api")
     app.include_router(kill_switch.router, prefix="/api")
+    app.include_router(backtest.router, prefix="/api")
 
     # WebSocket
     from tradebot.api.websocket import ConnectionManager
