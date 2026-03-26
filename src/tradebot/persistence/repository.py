@@ -112,7 +112,7 @@ class Repository:
         ]
 
     def save_backtest_run(self, result) -> BacktestRunRecord:
-        """Save a backtest run summary."""
+        """Save a backtest run summary with daily snapshots and trades."""
         record = BacktestRunRecord(
             strategy_name=result.strategy_name,
             start_date=result.start_date,
@@ -125,10 +125,25 @@ class Repository:
             total_trades=result.total_trades,
             win_rate=result.win_rate,
             profit_factor=result.profit_factor,
+            daily_snapshots=result.daily_snapshots,
+            trades=result.trades,
         )
         self._session.add(record)
         self._session.flush()
         return record
+
+    def get_backtest_run(self, run_id: int) -> BacktestRunRecord | None:
+        """Get a single backtest run by ID."""
+        return self._session.get(BacktestRunRecord, run_id)
+
+    def delete_backtest_run(self, run_id: int) -> bool:
+        """Delete a backtest run. Returns True if found and deleted."""
+        record = self._session.get(BacktestRunRecord, run_id)
+        if record is None:
+            return False
+        self._session.delete(record)
+        self._session.flush()
+        return True
 
     def get_backtest_runs(self, limit: int = 20) -> list[BacktestRunRecord]:
         """Get recent backtest runs."""

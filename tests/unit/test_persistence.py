@@ -120,6 +120,8 @@ class _FakeResult:
     total_trades = 38
     win_rate = Decimal("68.4")
     profit_factor = Decimal("2.31")
+    daily_snapshots = None
+    trades = None
 
 
 def test_save_backtest_run(repo):
@@ -134,3 +136,127 @@ def test_get_backtest_runs(repo):
     runs = repo.get_backtest_runs()
     assert len(runs) == 1
     assert runs[0].strategy_name == "test_ic"
+
+
+# --- Backtest JSON column tests ---
+
+from tradebot.backtest.results import BacktestResult
+
+
+def test_save_backtest_run_with_json(repo):
+    """save_backtest_run persists daily_snapshots and trades as JSON."""
+    result = BacktestResult(
+        strategy_name="test_strategy",
+        start_date=date(2026, 3, 1),
+        end_date=date(2026, 3, 5),
+        starting_capital=Decimal("2500"),
+        interval_minutes=15,
+        ending_nav=Decimal("2550"),
+        total_return_pct=Decimal("2.00"),
+        max_drawdown_pct=Decimal("1.50"),
+        total_trades=3,
+        winning_trades=2,
+        losing_trades=1,
+        win_rate=Decimal("66.67"),
+        avg_win=Decimal("40.00"),
+        avg_loss=Decimal("30.00"),
+        profit_factor=Decimal("2.67"),
+        daily_snapshots=[{"date": "2026-03-03", "nav": "2520", "daily_pnl": "20", "drawdown": "0"}],
+        trades=[{"date": "2026-03-03", "pnl": 20.0, "strategy": "test"}],
+    )
+    record = repo.save_backtest_run(result)
+    assert record.id is not None
+    assert record.daily_snapshots == result.daily_snapshots
+    assert record.trades == result.trades
+
+
+def test_get_backtest_run_by_id(repo):
+    """get_backtest_run returns full record including JSON columns."""
+    result = BacktestResult(
+        strategy_name="test_strategy",
+        start_date=date(2026, 3, 1),
+        end_date=date(2026, 3, 5),
+        starting_capital=Decimal("2500"),
+        interval_minutes=15,
+        ending_nav=Decimal("2550"),
+        total_return_pct=Decimal("2.00"),
+        max_drawdown_pct=Decimal("1.50"),
+        total_trades=3,
+        winning_trades=2,
+        losing_trades=1,
+        win_rate=Decimal("66.67"),
+        avg_win=Decimal("40.00"),
+        avg_loss=Decimal("30.00"),
+        profit_factor=Decimal("2.67"),
+        daily_snapshots=[{"date": "2026-03-03", "nav": "2520"}],
+        trades=[{"pnl": 20.0}],
+    )
+    saved = repo.save_backtest_run(result)
+    fetched = repo.get_backtest_run(saved.id)
+    assert fetched is not None
+    assert fetched.daily_snapshots == [{"date": "2026-03-03", "nav": "2520"}]
+    assert fetched.trades == [{"pnl": 20.0}]
+
+
+def test_get_backtest_run_not_found(repo):
+    """get_backtest_run returns None for nonexistent ID."""
+    assert repo.get_backtest_run(999) is None
+
+
+def test_delete_backtest_run(repo):
+    """delete_backtest_run removes the record."""
+    result = BacktestResult(
+        strategy_name="test_strategy",
+        start_date=date(2026, 3, 1),
+        end_date=date(2026, 3, 5),
+        starting_capital=Decimal("2500"),
+        interval_minutes=15,
+        ending_nav=Decimal("2550"),
+        total_return_pct=Decimal("2.00"),
+        max_drawdown_pct=Decimal("1.50"),
+        total_trades=3,
+        winning_trades=2,
+        losing_trades=1,
+        win_rate=Decimal("66.67"),
+        avg_win=Decimal("40.00"),
+        avg_loss=Decimal("30.00"),
+        profit_factor=Decimal("2.67"),
+        daily_snapshots=[],
+        trades=[],
+    )
+    saved = repo.save_backtest_run(result)
+    deleted = repo.delete_backtest_run(saved.id)
+    assert deleted is True
+    assert repo.get_backtest_run(saved.id) is None
+
+
+def test_delete_backtest_run_not_found(repo):
+    """delete_backtest_run returns False for nonexistent ID."""
+    assert repo.delete_backtest_run(999) is False
+
+
+def test_get_backtest_runs_excludes_json(repo):
+    """get_backtest_runs returns summary records."""
+    result = BacktestResult(
+        strategy_name="test_strategy",
+        start_date=date(2026, 3, 1),
+        end_date=date(2026, 3, 5),
+        starting_capital=Decimal("2500"),
+        interval_minutes=15,
+        ending_nav=Decimal("2550"),
+        total_return_pct=Decimal("2.00"),
+        max_drawdown_pct=Decimal("1.50"),
+        total_trades=3,
+        winning_trades=2,
+        losing_trades=1,
+        win_rate=Decimal("66.67"),
+        avg_win=Decimal("40.00"),
+        avg_loss=Decimal("30.00"),
+        profit_factor=Decimal("2.67"),
+        daily_snapshots=[{"date": "2026-03-03"}],
+        trades=[{"pnl": 20.0}],
+    )
+    repo.save_backtest_run(result)
+    runs = repo.get_backtest_runs(limit=10)
+    assert len(runs) == 1
+    assert runs[0].strategy_name == "test_strategy"
