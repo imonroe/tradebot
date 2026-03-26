@@ -1,4 +1,7 @@
+import { useState } from "react";
 import { useApi } from "../hooks/useApi";
+import BacktestRunner from "../components/backtest/BacktestRunner";
+import BacktestHistory from "../components/backtest/BacktestHistory";
 
 interface Strategy {
   name: string;
@@ -7,7 +10,10 @@ interface Strategy {
   has_position: boolean;
 }
 
-export default function Strategies() {
+type Tab = "overview" | "backtest";
+type BacktestSubView = "run" | "history";
+
+function StrategiesOverview() {
   const { data: strategies, loading } = useApi<Strategy[]>(
     "/api/strategies",
     10000
@@ -18,7 +24,6 @@ export default function Strategies() {
 
   return (
     <div>
-      <h2 className="text-lg font-semibold mb-3">Loaded Strategies</h2>
       {!strategies || strategies.length === 0 ? (
         <div className="text-gray-500 bg-gray-900 border border-gray-800 rounded-lg p-8 text-center">
           No strategies loaded
@@ -52,6 +57,72 @@ export default function Strategies() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function Strategies() {
+  const [tab, setTab] = useState<Tab>("overview");
+  const [backtestView, setBacktestView] = useState<BacktestSubView>("run");
+
+  return (
+    <div>
+      {/* Tab navigation */}
+      <div className="flex items-center gap-6 mb-6 border-b border-gray-800">
+        <button
+          onClick={() => setTab("overview")}
+          className={`pb-2 text-sm font-medium border-b-2 ${
+            tab === "overview"
+              ? "border-green-400 text-white"
+              : "border-transparent text-gray-400 hover:text-gray-200"
+          }`}
+        >
+          Overview
+        </button>
+        <button
+          onClick={() => setTab("backtest")}
+          className={`pb-2 text-sm font-medium border-b-2 ${
+            tab === "backtest"
+              ? "border-green-400 text-white"
+              : "border-transparent text-gray-400 hover:text-gray-200"
+          }`}
+        >
+          Backtest
+        </button>
+      </div>
+
+      {tab === "overview" && <StrategiesOverview />}
+
+      {tab === "backtest" && (
+        <div>
+          {/* Sub-view toggle */}
+          <div className="flex items-center gap-4 mb-4">
+            <button
+              onClick={() => setBacktestView("run")}
+              className={`px-3 py-1 rounded text-sm ${
+                backtestView === "run"
+                  ? "bg-gray-700 text-white"
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              Run
+            </button>
+            <button
+              onClick={() => setBacktestView("history")}
+              className={`px-3 py-1 rounded text-sm ${
+                backtestView === "history"
+                  ? "bg-gray-700 text-white"
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              History
+            </button>
+          </div>
+
+          {backtestView === "run" && <BacktestRunner />}
+          {backtestView === "history" && <BacktestHistory />}
         </div>
       )}
     </div>

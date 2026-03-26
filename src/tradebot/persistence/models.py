@@ -1,7 +1,7 @@
 """SQLAlchemy ORM models for trade persistence."""
 from datetime import date, datetime
 from decimal import Decimal
-from sqlalchemy import Date, DateTime, Integer, Numeric, String, ForeignKey
+from sqlalchemy import Date, DateTime, Integer, JSON, Numeric, String, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from tradebot.persistence.database import Base
 
@@ -65,3 +65,5 @@ class BacktestRunRecord(Base):
     win_rate: Mapped[Decimal] = mapped_column(Numeric(6, 2))
     profit_factor: Mapped[Decimal] = mapped_column(Numeric(8, 2))
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
+    daily_snapshots: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    trades: Mapped[list | None] = mapped_column(JSON, nullable=True)
