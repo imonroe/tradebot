@@ -115,8 +115,21 @@ class Repository:
             for s in snapshots
         ]
 
+    @staticmethod
+    def _json_safe(obj):
+        """Recursively convert Decimal/date values to JSON-serializable types."""
+        if isinstance(obj, Decimal):
+            return float(obj)
+        if isinstance(obj, (date, datetime)):
+            return obj.isoformat()
+        if isinstance(obj, dict):
+            return {k: Repository._json_safe(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [Repository._json_safe(item) for item in obj]
+        return obj
+
     def save_backtest_run(self, result) -> BacktestRunRecord:
-        """Save a backtest run summary."""
+        """Save a backtest run summary with daily snapshots and trades."""
         record = BacktestRunRecord(
             strategy_name=result.strategy_name,
             start_date=result.start_date,
@@ -129,10 +142,25 @@ class Repository:
             total_trades=result.total_trades,
             win_rate=result.win_rate,
             profit_factor=result.profit_factor,
+            daily_snapshots=self._json_safe(result.daily_snapshots),
+            trades=self._json_safe(result.trades),
         )
         self._session.add(record)
         self._session.flush()
         return record
+
+    def get_backtest_run(self, run_id: int) -> BacktestRunRecord | None:
+        """Get a single backtest run by ID."""
+        return self._session.get(BacktestRunRecord, run_id)
+
+    def delete_backtest_run(self, run_id: int) -> bool:
+        """Delete a backtest run. Returns True if found and deleted."""
+        record = self._session.get(BacktestRunRecord, run_id)
+        if record is None:
+            return False
+        self._session.delete(record)
+        self._session.flush()
+        return True
 
     def get_backtest_runs(self, limit: int = 20) -> list[BacktestRunRecord]:
         """Get recent backtest runs."""

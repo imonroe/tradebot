@@ -143,6 +143,184 @@ def test_nav_history_without_repo(client):
     assert response.json() == []
 
 
+# --- Backtest routes ---
+
+def test_backtest_strategies_endpoint(client):
+    """GET /api/backtest/strategies returns available strategy configs."""
+    response = client.get("/api/backtest/strategies")
+    assert response.status_code == 200
+    data = response.json()
+    assert isinstance(data, list)
+    assert len(data) > 0
+    strat = data[0]
+    assert "name" in strat
+    assert "filename" in strat
+    assert "config" in strat
+    assert "entry" in strat["config"]
+
+
+def test_backtest_run_endpoint(client_with_repo):
+    """POST /api/backtest/run executes a backtest and returns results."""
+    response = client_with_repo.post("/api/backtest/run", json={
+        "strategy": "xsp_iron_condor",
+        "start_date": "2026-03-02",
+        "end_date": "2026-03-03",
+        "starting_capital": 2500,
+        "slippage_pct": 0,
+        "interval_minutes": 15,
+        "save": False,
+    })
+    assert response.status_code == 200
+    data = response.json()
+    assert "strategy_name" in data
+    assert "total_return_pct" in data
+    assert "daily_snapshots" in data
+    assert "trades" in data
+
+
+def test_backtest_run_date_range_too_large(client_with_repo):
+    """POST /api/backtest/run rejects date ranges over 30 days."""
+    response = client_with_repo.post("/api/backtest/run", json={
+        "strategy": "xsp_iron_condor",
+        "start_date": "2026-01-01",
+        "end_date": "2026-03-15",
+        "starting_capital": 2500,
+    })
+    assert response.status_code == 422
+
+
+def test_backtest_run_invalid_dates(client_with_repo):
+    """POST /api/backtest/run rejects start >= end."""
+    response = client_with_repo.post("/api/backtest/run", json={
+        "strategy": "xsp_iron_condor",
+        "start_date": "2026-03-10",
+        "end_date": "2026-03-05",
+        "starting_capital": 2500,
+    })
+    assert response.status_code == 422
+
+
+def test_backtest_run_invalid_strategy(client_with_repo):
+    """POST /api/backtest/run rejects nonexistent strategy."""
+    response = client_with_repo.post("/api/backtest/run", json={
+        "strategy": "nonexistent_strategy",
+        "start_date": "2026-03-02",
+        "end_date": "2026-03-03",
+        "starting_capital": 2500,
+    })
+    assert response.status_code == 422
+
+
+def test_backtest_run_with_save(client_with_repo):
+    """POST /api/backtest/run with save=true persists the run."""
+    response = client_with_repo.post("/api/backtest/run", json={
+        "strategy": "xsp_iron_condor",
+        "start_date": "2026-03-02",
+        "end_date": "2026-03-03",
+        "starting_capital": 2500,
+        "save": True,
+    })
+    assert response.status_code == 200
+    # Verify it was saved
+    runs_response = client_with_repo.get("/api/backtest/runs")
+    assert runs_response.status_code == 200
+    assert len(runs_response.json()) == 1
+
+
+def test_backtest_run_with_overrides(client_with_repo):
+    """POST /api/backtest/run applies strategy overrides."""
+    response = client_with_repo.post("/api/backtest/run", json={
+        "strategy": "xsp_iron_condor",
+        "start_date": "2026-03-02",
+        "end_date": "2026-03-03",
+        "starting_capital": 2500,
+        "overrides": {
+            "entry.strike_selection.short_call_delta": 0.10,
+        },
+    })
+    assert response.status_code == 200
+
+
+def test_backtest_run_invalid_override_key(client_with_repo):
+    """POST /api/backtest/run rejects unknown override keys."""
+    response = client_with_repo.post("/api/backtest/run", json={
+        "strategy": "xsp_iron_condor",
+        "start_date": "2026-03-02",
+        "end_date": "2026-03-03",
+        "starting_capital": 2500,
+        "overrides": {
+            "nonexistent.path.key": 42,
+        },
+    })
+    assert response.status_code == 422
+
+
+def test_backtest_runs_endpoint(client_with_repo):
+    """GET /api/backtest/runs returns saved runs."""
+    # Run and save a backtest first
+    client_with_repo.post("/api/backtest/run", json={
+        "strategy": "xsp_iron_condor",
+        "start_date": "2026-03-02",
+        "end_date": "2026-03-03",
+        "starting_capital": 2500,
+        "save": True,
+    })
+    response = client_with_repo.get("/api/backtest/runs")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert "id" in data[0]
+    assert "strategy_name" in data[0]
+    assert "total_return_pct" in data[0]
+
+
+def test_backtest_run_detail_endpoint(client_with_repo):
+    """GET /api/backtest/runs/{id} returns full run with snapshots and trades."""
+    run_response = client_with_repo.post("/api/backtest/run", json={
+        "strategy": "xsp_iron_condor",
+        "start_date": "2026-03-02",
+        "end_date": "2026-03-03",
+        "starting_capital": 2500,
+        "save": True,
+    })
+    run_id = run_response.json()["id"]
+    response = client_with_repo.get(f"/api/backtest/runs/{run_id}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == run_id
+    assert "daily_snapshots" in data
+    assert "trades" in data
+
+
+def test_backtest_run_detail_not_found(client_with_repo):
+    """GET /api/backtest/runs/{id} returns 404 for nonexistent run."""
+    response = client_with_repo.get("/api/backtest/runs/999")
+    assert response.status_code == 404
+
+
+def test_backtest_run_delete_endpoint(client_with_repo):
+    """DELETE /api/backtest/runs/{id} removes the run."""
+    run_response = client_with_repo.post("/api/backtest/run", json={
+        "strategy": "xsp_iron_condor",
+        "start_date": "2026-03-02",
+        "end_date": "2026-03-03",
+        "starting_capital": 2500,
+        "save": True,
+    })
+    run_id = run_response.json()["id"]
+    delete_response = client_with_repo.delete(f"/api/backtest/runs/{run_id}")
+    assert delete_response.status_code == 200
+    # Verify it's gone
+    get_response = client_with_repo.get(f"/api/backtest/runs/{run_id}")
+    assert get_response.status_code == 404
+
+
+def test_backtest_run_delete_not_found(client_with_repo):
+    """DELETE /api/backtest/runs/{id} returns 404 for nonexistent run."""
+    response = client_with_repo.delete("/api/backtest/runs/999")
+    assert response.status_code == 404
+
+
 # --- Task 4: WebSocket ---
 
 def test_websocket_connection(client):
