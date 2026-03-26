@@ -143,8 +143,6 @@ def test_nav_history_without_repo(client):
     assert response.json() == []
 
 
-# --- Task 4: WebSocket ---
-
 # --- Backtest routes ---
 
 def test_backtest_strategies_endpoint(client):

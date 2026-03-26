@@ -1,4 +1,5 @@
 """Backtest API routes."""
+import os
 import tempfile
 from datetime import date
 from decimal import Decimal
@@ -78,12 +79,15 @@ async def run_backtest_endpoint(req: BacktestRequest, request: Request):
     if (req.end_date - req.start_date).days > 30:
         raise HTTPException(status_code=422, detail="Date range cannot exceed 30 days")
 
-    # Find strategy config
+    # Find strategy config — reject path traversal attempts
+    if "/" in req.strategy or "\\" in req.strategy or ".." in req.strategy:
+        raise HTTPException(status_code=422, detail=f"Strategy not found: {req.strategy}")
     config_path = STRATEGIES_DIR / f"{req.strategy}.yaml"
     if not config_path.exists():
         raise HTTPException(status_code=422, detail=f"Strategy not found: {req.strategy}")
 
     # Apply overrides if provided
+    tmp_path: Path | None = None
     if req.overrides:
         with open(config_path) as f:
             config = yaml.safe_load(f)
@@ -95,17 +99,22 @@ async def run_backtest_endpoint(req: BacktestRequest, request: Request):
         tmp = tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False)
         yaml.dump(config, tmp)
         tmp.close()
-        config_path = Path(tmp.name)
+        tmp_path = Path(tmp.name)
+        config_path = tmp_path
 
     # Run the backtest
-    result = await run_backtest(
-        strategy_config_path=config_path,
-        start_date=req.start_date,
-        end_date=req.end_date,
-        interval_minutes=req.interval_minutes,
-        starting_capital=Decimal(str(req.starting_capital)),
-        slippage_pct=Decimal(str(req.slippage_pct)),
-    )
+    try:
+        result = await run_backtest(
+            strategy_config_path=config_path,
+            start_date=req.start_date,
+            end_date=req.end_date,
+            interval_minutes=req.interval_minutes,
+            starting_capital=Decimal(str(req.starting_capital)),
+            slippage_pct=Decimal(str(req.slippage_pct)),
+        )
+    finally:
+        if tmp_path is not None:
+            tmp_path.unlink(missing_ok=True)
 
     # Save if requested
     state = request.app.state.app_state
