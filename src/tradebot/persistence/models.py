@@ -1,7 +1,7 @@
 """SQLAlchemy ORM models for trade persistence."""
 from datetime import date, datetime
 from decimal import Decimal
-from sqlalchemy import Date, DateTime, Integer, JSON, Numeric, String, ForeignKey
+from sqlalchemy import Date, DateTime, Integer, JSON, Numeric, String, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from tradebot.persistence.database import Base
 
@@ -47,6 +47,19 @@ class DailySnapshotRecord(Base):
     unrealized_pnl: Mapped[Decimal] = mapped_column(Numeric(10, 2))
     drawdown: Mapped[Decimal] = mapped_column(Numeric(6, 4))
     day_trade_count: Mapped[int] = mapped_column(Integer)
+
+
+class PriceBarRecord(Base):
+    __tablename__ = "price_bars"
+    __table_args__ = (UniqueConstraint("symbol", "timestamp", name="uq_price_bar_symbol_ts"),)
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    symbol: Mapped[str] = mapped_column(String(20))
+    timestamp: Mapped[datetime] = mapped_column(DateTime)
+    open: Mapped[Decimal] = mapped_column(Numeric(10, 4))
+    high: Mapped[Decimal] = mapped_column(Numeric(10, 4))
+    low: Mapped[Decimal] = mapped_column(Numeric(10, 4))
+    close: Mapped[Decimal] = mapped_column(Numeric(10, 4))
+    volume: Mapped[int] = mapped_column(Integer)
 
 
 class BacktestRunRecord(Base):

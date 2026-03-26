@@ -52,6 +52,22 @@ async def bot_loop(
                     today = date.today()
                     event = await market_data.fetch_market_data(strategy.symbol, today)
                     await bus.publish(event)
+
+                    # Persist price bar for charting
+                    if state.repository and event.bar:
+                        bar = event.bar
+                        # Truncate timestamp to the minute for consistent 1m bars
+                        bar_ts = bar.timestamp.replace(second=0, microsecond=0)
+                        try:
+                            state.repository.save_price_bar(
+                                symbol=bar.symbol, timestamp=bar_ts,
+                                open_=bar.open, high=bar.high,
+                                low=bar.low, close=bar.close,
+                                volume=bar.volume,
+                            )
+                            state.repository.commit()
+                        except Exception as e:
+                            logger.debug("price_bar_save_error", error=str(e))
                 except Exception as e:
                     logger.error("market_data_error", symbol=strategy.symbol, error=str(e))
 

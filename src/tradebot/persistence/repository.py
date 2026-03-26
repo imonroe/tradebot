@@ -2,8 +2,9 @@
 from datetime import date, datetime
 from decimal import Decimal
 from sqlalchemy import select, func
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from tradebot.persistence.models import TradeRecord, TradeLegRecord, DayTradeLogRecord, DailySnapshotRecord, BacktestRunRecord
+from tradebot.persistence.models import TradeRecord, TradeLegRecord, DayTradeLogRecord, DailySnapshotRecord, BacktestRunRecord, PriceBarRecord
 
 class Repository:
     def __init__(self, session: Session) -> None:
@@ -51,11 +52,14 @@ class Repository:
         return list(self._session.execute(stmt).scalars().all())
 
     def get_closed_trades(self) -> list[TradeRecord]:
-        """Get all closed trades, ordered by exit time ascending."""
+        """Get all closed trades, ordered by exit time ascending (NULLs last, stable by id)."""
         stmt = (
             select(TradeRecord)
             .where(TradeRecord.status == "closed")
-            .order_by(TradeRecord.exit_time.asc())
+            .order_by(
+                TradeRecord.exit_time.asc().nulls_last(),
+                TradeRecord.id.asc(),
+            )
         )
         return list(self._session.execute(stmt).scalars().all())
 
@@ -167,6 +171,41 @@ class Repository:
         )
         return list(self._session.execute(stmt).scalars().all())
 
+    def save_price_bar(
+        self, symbol: str, timestamp: datetime, open_: Decimal,
+        high: Decimal, low: Decimal, close: Decimal, volume: int,
+    ) -> None:
+        """Save a price bar, silently ignoring duplicates via savepoint."""
+        bar = PriceBarRecord(
+            symbol=symbol, timestamp=timestamp,
+            open=open_, high=high, low=low, close=close, volume=volume,
+        )
+        nested = self._session.begin_nested()
+        self._session.add(bar)
+        try:
+            nested.commit()
+        except IntegrityError:
+            nested.rollback()
+
+    def get_price_bars(
+        self, symbol: str, start: datetime, end: datetime,
+    ) -> list[PriceBarRecord]:
+        """Get price bars for a symbol within a time range."""
+        stmt = (
+            select(PriceBarRecord)
+            .where(
+                PriceBarRecord.symbol == symbol,
+                PriceBarRecord.timestamp >= start,
+                PriceBarRecord.timestamp <= end,
+            )
+            .order_by(PriceBarRecord.timestamp.asc())
+        )
+        return list(self._session.execute(stmt).scalars().all())
+
     def commit(self) -> None:
         """Commit the current session."""
         self._session.commit()
+
+    def rollback(self) -> None:
+        """Rollback the current session."""
+        self._session.rollback()
