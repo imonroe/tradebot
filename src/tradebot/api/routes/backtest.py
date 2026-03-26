@@ -118,9 +118,15 @@ async def run_backtest_endpoint(req: BacktestRequest, request: Request):
     # Save if requested
     state = request.app.state.app_state
     run_id = None
-    if req.save and state.repository:
-        record = state.repository.save_backtest_run(result)
-        state.repository.commit()
+    if req.save:
+        repository = getattr(state, "repository", None)
+        if not repository:
+            raise HTTPException(
+                status_code=503,
+                detail="Backtest persistence is not available (no repository configured).",
+            )
+        record = repository.save_backtest_run(result)
+        repository.commit()
         run_id = record.id
 
     return {
@@ -179,6 +185,15 @@ async def get_run(run_id: int, request: Request):
     record = state.repository.get_backtest_run(run_id)
     if record is None:
         raise HTTPException(status_code=404, detail="Backtest run not found")
+    # Compute trade stats from stored trades for the frontend
+    trades = record.trades or []
+    winning_trades = sum(1 for t in trades if float(t.get("pnl", 0)) > 0)
+    losing_trades = sum(1 for t in trades if float(t.get("pnl", 0)) <= 0)
+    wins = [float(t["pnl"]) for t in trades if float(t.get("pnl", 0)) > 0]
+    losses = [abs(float(t["pnl"])) for t in trades if float(t.get("pnl", 0)) < 0]
+    avg_win = sum(wins) / len(wins) if wins else 0
+    avg_loss = sum(losses) / len(losses) if losses else 0
+
     return {
         "id": record.id,
         "strategy_name": record.strategy_name,
@@ -190,10 +205,14 @@ async def get_run(run_id: int, request: Request):
         "total_return_pct": str(record.total_return_pct),
         "max_drawdown_pct": str(record.max_drawdown_pct),
         "total_trades": record.total_trades,
+        "winning_trades": winning_trades,
+        "losing_trades": losing_trades,
         "win_rate": str(record.win_rate),
+        "avg_win": f"{avg_win:.2f}",
+        "avg_loss": f"{avg_loss:.2f}",
         "profit_factor": str(record.profit_factor),
         "daily_snapshots": record.daily_snapshots or [],
-        "trades": record.trades or [],
+        "trades": trades,
         "created_at": record.created_at.isoformat(),
     }
 

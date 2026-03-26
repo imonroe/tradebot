@@ -111,6 +111,19 @@ class Repository:
             for s in snapshots
         ]
 
+    @staticmethod
+    def _json_safe(obj):
+        """Recursively convert Decimal/date values to JSON-serializable types."""
+        if isinstance(obj, Decimal):
+            return float(obj)
+        if isinstance(obj, (date, datetime)):
+            return obj.isoformat()
+        if isinstance(obj, dict):
+            return {k: Repository._json_safe(v) for k, v in obj.items()}
+        if isinstance(obj, list):
+            return [Repository._json_safe(item) for item in obj]
+        return obj
+
     def save_backtest_run(self, result) -> BacktestRunRecord:
         """Save a backtest run summary with daily snapshots and trades."""
         record = BacktestRunRecord(
@@ -125,8 +138,8 @@ class Repository:
             total_trades=result.total_trades,
             win_rate=result.win_rate,
             profit_factor=result.profit_factor,
-            daily_snapshots=result.daily_snapshots,
-            trades=result.trades,
+            daily_snapshots=self._json_safe(result.daily_snapshots),
+            trades=self._json_safe(result.trades),
         )
         self._session.add(record)
         self._session.flush()
