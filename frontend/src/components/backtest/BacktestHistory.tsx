@@ -57,8 +57,15 @@ export default function BacktestHistory() {
     setLoadingDetail(true);
     try {
       const res = await fetch(`/api/backtest/runs/${id}`);
+      if (!res.ok) {
+        throw new Error(`Failed to load run details (status ${res.status})`);
+      }
       const data: RunDetail = await res.json();
       setExpandedData(data);
+    } catch (error) {
+      console.error("Error loading run details:", error);
+      setExpandedData(null);
+      setExpandedId(null);
     } finally {
       setLoadingDetail(false);
     }
@@ -70,21 +77,46 @@ export default function BacktestHistory() {
       setExpandedId(null);
       setExpandedData(null);
     }
-    selected.delete(id);
-    setSelected(new Set(selected));
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
   };
 
   const handleCompare = async () => {
     setLoadingDetail(true);
     try {
-      const details = await Promise.all(
-        Array.from(selected).map(async (id) => {
+      const selectedIds = Array.from(selected);
+      const results = await Promise.allSettled(
+        selectedIds.map(async (id) => {
           const res = await fetch(`/api/backtest/runs/${id}`);
-          return res.json() as Promise<RunDetail>;
+          if (!res.ok) {
+            throw new Error(`Failed to load run ${id}: ${res.status} ${res.statusText}`);
+          }
+          return (await res.json()) as RunDetail;
         })
       );
-      setComparisonRuns(details);
-      setComparing(true);
+
+      const successfulDetails: RunDetail[] = [];
+      const failedIds: number[] = [];
+
+      results.forEach((result, index) => {
+        if (result.status === "fulfilled") {
+          successfulDetails.push(result.value);
+        } else {
+          failedIds.push(selectedIds[index]);
+        }
+      });
+
+      if (failedIds.length > 0) {
+        console.error(`Failed to load runs for comparison: ${failedIds.join(", ")}`);
+      }
+
+      if (successfulDetails.length > 0) {
+        setComparisonRuns(successfulDetails);
+        setComparing(true);
+      }
     } finally {
       setLoadingDetail(false);
     }

@@ -57,7 +57,7 @@ export default function BacktestResults({ result }: { result: BacktestResultData
   const returnColor = returnPct >= 0 ? "text-green-400" : "text-red-400";
 
   const chartData = result.daily_snapshots.map((s) => ({
-    date: new Date(s.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+    date: new Date(s.date + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }),
     nav: parseFloat(s.nav),
     drawdown: parseFloat(s.drawdown),
   }));
