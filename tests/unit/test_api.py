@@ -255,6 +255,72 @@ def test_backtest_run_invalid_override_key(client_with_repo):
     assert response.status_code == 422
 
 
+def test_backtest_runs_endpoint(client_with_repo):
+    """GET /api/backtest/runs returns saved runs."""
+    # Run and save a backtest first
+    client_with_repo.post("/api/backtest/run", json={
+        "strategy": "xsp_iron_condor",
+        "start_date": "2026-03-02",
+        "end_date": "2026-03-03",
+        "starting_capital": 2500,
+        "save": True,
+    })
+    response = client_with_repo.get("/api/backtest/runs")
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 1
+    assert "id" in data[0]
+    assert "strategy_name" in data[0]
+    assert "total_return_pct" in data[0]
+
+
+def test_backtest_run_detail_endpoint(client_with_repo):
+    """GET /api/backtest/runs/{id} returns full run with snapshots and trades."""
+    run_response = client_with_repo.post("/api/backtest/run", json={
+        "strategy": "xsp_iron_condor",
+        "start_date": "2026-03-02",
+        "end_date": "2026-03-03",
+        "starting_capital": 2500,
+        "save": True,
+    })
+    run_id = run_response.json()["id"]
+    response = client_with_repo.get(f"/api/backtest/runs/{run_id}")
+    assert response.status_code == 200
+    data = response.json()
+    assert data["id"] == run_id
+    assert "daily_snapshots" in data
+    assert "trades" in data
+
+
+def test_backtest_run_detail_not_found(client_with_repo):
+    """GET /api/backtest/runs/{id} returns 404 for nonexistent run."""
+    response = client_with_repo.get("/api/backtest/runs/999")
+    assert response.status_code == 404
+
+
+def test_backtest_run_delete_endpoint(client_with_repo):
+    """DELETE /api/backtest/runs/{id} removes the run."""
+    run_response = client_with_repo.post("/api/backtest/run", json={
+        "strategy": "xsp_iron_condor",
+        "start_date": "2026-03-02",
+        "end_date": "2026-03-03",
+        "starting_capital": 2500,
+        "save": True,
+    })
+    run_id = run_response.json()["id"]
+    delete_response = client_with_repo.delete(f"/api/backtest/runs/{run_id}")
+    assert delete_response.status_code == 200
+    # Verify it's gone
+    get_response = client_with_repo.get(f"/api/backtest/runs/{run_id}")
+    assert get_response.status_code == 404
+
+
+def test_backtest_run_delete_not_found(client_with_repo):
+    """DELETE /api/backtest/runs/{id} returns 404 for nonexistent run."""
+    response = client_with_repo.delete("/api/backtest/runs/999")
+    assert response.status_code == 404
+
+
 # --- Task 4: WebSocket ---
 
 def test_websocket_connection(client):

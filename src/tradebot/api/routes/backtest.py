@@ -147,12 +147,12 @@ async def run_backtest_endpoint(req: BacktestRequest, request: Request):
 
 
 @router.get("/runs")
-async def list_backtest_runs(request: Request):
+async def list_runs(request: Request, limit: int = 20):
     """List saved backtest runs."""
     state = request.app.state.app_state
     if not state.repository:
         return []
-    runs = state.repository.get_backtest_runs()
+    runs = state.repository.get_backtest_runs(limit=limit)
     return [
         {
             "id": r.id,
@@ -161,9 +161,52 @@ async def list_backtest_runs(request: Request):
             "end_date": r.end_date.isoformat(),
             "starting_capital": str(r.starting_capital),
             "total_return_pct": str(r.total_return_pct),
+            "max_drawdown_pct": str(r.max_drawdown_pct),
             "total_trades": r.total_trades,
             "win_rate": str(r.win_rate),
-            "created_at": r.created_at.isoformat() if r.created_at else None,
+            "profit_factor": str(r.profit_factor),
+            "created_at": r.created_at.isoformat(),
         }
         for r in runs
     ]
+
+
+@router.get("/runs/{run_id}")
+async def get_run(run_id: int, request: Request):
+    """Get a single backtest run with full details."""
+    state = request.app.state.app_state
+    if not state.repository:
+        raise HTTPException(status_code=404, detail="No repository configured")
+    record = state.repository.get_backtest_run(run_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="Backtest run not found")
+    return {
+        "id": record.id,
+        "strategy_name": record.strategy_name,
+        "start_date": record.start_date.isoformat(),
+        "end_date": record.end_date.isoformat(),
+        "starting_capital": str(record.starting_capital),
+        "interval_minutes": record.interval_minutes,
+        "ending_nav": str(record.ending_nav),
+        "total_return_pct": str(record.total_return_pct),
+        "max_drawdown_pct": str(record.max_drawdown_pct),
+        "total_trades": record.total_trades,
+        "win_rate": str(record.win_rate),
+        "profit_factor": str(record.profit_factor),
+        "daily_snapshots": record.daily_snapshots or [],
+        "trades": record.trades or [],
+        "created_at": record.created_at.isoformat(),
+    }
+
+
+@router.delete("/runs/{run_id}")
+async def delete_run(run_id: int, request: Request):
+    """Delete a backtest run."""
+    state = request.app.state.app_state
+    if not state.repository:
+        raise HTTPException(status_code=404, detail="No repository configured")
+    deleted = state.repository.delete_backtest_run(run_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail="Backtest run not found")
+    state.repository.commit()
+    return {"deleted": True}
