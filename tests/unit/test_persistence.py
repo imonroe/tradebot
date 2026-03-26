@@ -6,6 +6,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
 from tradebot.persistence.database import Base
 from tradebot.persistence.repository import Repository
+from tradebot.backtest.results import BacktestResult
 
 @pytest.fixture
 def db_session():
@@ -140,8 +141,6 @@ def test_get_backtest_runs(repo):
 
 # --- Backtest JSON column tests ---
 
-from tradebot.backtest.results import BacktestResult
-
 
 def test_save_backtest_run_with_json(repo):
     """save_backtest_run persists daily_snapshots and trades as JSON."""
@@ -235,8 +234,8 @@ def test_delete_backtest_run_not_found(repo):
     assert repo.delete_backtest_run(999) is False
 
 
-def test_get_backtest_runs_excludes_json(repo):
-    """get_backtest_runs returns summary records."""
+def test_get_backtest_runs_returns_saved_records(repo):
+    """get_backtest_runs returns saved records."""
     result = BacktestResult(
         strategy_name="test_strategy",
         start_date=date(2026, 3, 1),
