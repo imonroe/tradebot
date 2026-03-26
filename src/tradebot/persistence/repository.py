@@ -175,7 +175,7 @@ class Repository:
         self, symbol: str, timestamp: datetime, open_: Decimal,
         high: Decimal, low: Decimal, close: Decimal, volume: int,
     ) -> None:
-        """Save a price bar, silently ignoring duplicates via savepoint."""
+        """Save a price bar, silently ignoring duplicate (symbol, timestamp) via savepoint."""
         bar = PriceBarRecord(
             symbol=symbol, timestamp=timestamp,
             open=open_, high=high, low=low, close=close, volume=volume,
@@ -184,8 +184,12 @@ class Repository:
         self._session.add(bar)
         try:
             nested.commit()
-        except IntegrityError:
+        except IntegrityError as e:
             nested.rollback()
+            # Only swallow duplicate constraint; re-raise other integrity errors
+            err_msg = str(e.orig).lower()
+            if "unique" not in err_msg and "uq_price_bar_symbol_ts" not in err_msg:
+                raise
 
     def get_price_bars(
         self, symbol: str, start: datetime, end: datetime,

@@ -56,12 +56,24 @@ function CandleShape(props: Record<string, unknown>) {
   const { high, low, isUp } = payload;
   const bodyTop = Math.max(payload.open, payload.close);
   const bodyBottom = Math.min(payload.open, payload.close);
-  const yScale = height / payload.bodyHeight;
+  const priceBodyHeight = Math.abs(payload.open - payload.close);
+  const isDoji = priceBodyHeight === 0;
 
-  // Wick positions relative to body
   const wickX = x + width / 2;
-  const wickTopY = y - (high - bodyTop) * yScale;
-  const wickBottomY = y + height + (bodyBottom - low) * yScale;
+
+  let wickTopY: number;
+  let wickBottomY: number;
+
+  if (isDoji) {
+    // For doji candles, use fixed pixel wick length to avoid division by zero
+    const dojiWickLength = 4;
+    wickTopY = y - dojiWickLength;
+    wickBottomY = y + height + dojiWickLength;
+  } else {
+    const yScale = height / priceBodyHeight;
+    wickTopY = y - (high - bodyTop) * yScale;
+    wickBottomY = y + height + (bodyBottom - low) * yScale;
+  }
 
   const fill = isUp ? "#4ade80" : "#f87171";
   const stroke = isUp ? "#22c55e" : "#ef4444";
