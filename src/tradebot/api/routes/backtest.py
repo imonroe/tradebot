@@ -1,5 +1,4 @@
 """Backtest API routes."""
-import os
 import tempfile
 from datetime import date
 from decimal import Decimal
